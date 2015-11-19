@@ -70,8 +70,8 @@ def adb_push_string(content, filepath, devices):
     os.remove(tmp_file)
     return return_list
 
-def print_return(output):
-    print output
+def print_return(preprint, output):
+    print preprint + '\n' + output
     return output
 
 def exit(returncode):
