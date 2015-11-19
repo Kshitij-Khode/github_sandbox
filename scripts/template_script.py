@@ -31,8 +31,9 @@ def shell_list(command_list):
 
 def shell_script(command, filepath):
     write_file('#!/bin/bash\n%s' % command, filepath)
-    return shell('sh %s' % filepath)
+    out = shell('sh %s' % filepath)
     os.remove(filepath)
+    return out
 
 def shell_to_file(command, filepath):
     with open(filepath, 'w') as file: subprocess.Popen(command.split(), stdout=file, stderr=subprocess.STDOUT).communicate()
@@ -69,8 +70,9 @@ def adb_push_string(content, filepath, devices):
     os.remove(tmp_file)
     return return_list
 
-def print_alias(output):
+def print_return(output):
     print output
+    return output
 
 def exit(returncode):
     print rc[returncode]
@@ -78,4 +80,3 @@ def exit(returncode):
 
 # def remount_devices(devices):
 #     return [d for d in devices if 'remount succeeded' not in shell('adb -s %s remount' % d)]
-[print_alias(1) for d in [1, 2]]
