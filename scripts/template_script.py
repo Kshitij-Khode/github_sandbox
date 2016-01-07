@@ -39,7 +39,7 @@ def shell_to_file(command, filepath):
     with open(filepath, 'w') as file: subprocess.Popen(command.split(), stdout=file, stderr=subprocess.STDOUT).communicate()
 
 def shell_call(command):
-    return subprocess.call(command.split())
+    subprocess.call(command.split())
 
 def write_file(content, filepath):
     with open(filepath, 'w') as sfile:
@@ -71,7 +71,7 @@ def adb_push_string(content, filepath, devices):
     return return_list
 
 def print_return(preprint, output):
-    print preprint + '\n' + output
+    print preprint + '\n' + str(output)
     return output
 
 def exit(returncode):
