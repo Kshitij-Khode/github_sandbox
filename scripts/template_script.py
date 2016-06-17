@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, subprocess, argparse, sys
+import os, subprocess, argparse, sys, re
 
 parser = argparse.ArgumentParser(description='$CHANGE_HELP_MSG')
 
@@ -9,14 +9,14 @@ rc = {
 
 sp = {
     'install-recovery.sh':
-'''#!/system/bin/sh
-/data/QA/scripts/power_management/boot_force_sta_connect.py &
-'''
+    '''#!/system/bin/sh
+    /data/QA/scripts/power_management/boot_force_sta_connect.py &
+    '''
 }
 
 def add_list_arg(id, help, required):
     parser.add_argument('--%s' % id, help=help, nargs='+', default=[], required=required)
-    
+
 def add_string_arg(id, help, required):
     parser.add_argument('--%s' % id, help=help, type=str, default='', required=required)
 
@@ -54,14 +54,14 @@ def get_unique_filename(filepath):
     return filepath.replace('$SUFFIX', str(suffix))
 
 def get_connected_devices():
-    return [ x for x in [x.split()[0].strip() for x in shell('adb devices').strip().split('\n')[1:] if 'device' in x] ]
+    return [ x for x in [x.split()[0].strip() for x in shell('adb devices').strip().split('\n') if 'device' in x and 'devices' not in x] ]
 
 def user_select_device(devices):
     if len(devices) == 1: return devices[0]
     for choice, dev in zip(range(len(devices)), devices): print 'device [%s]: %s' % (choice, dev)
     try: choice = int(raw_input('choose device: '))
     except Exception: return ''
-    return devices[choice] if choice > -1 and choice < len(devices) else ''  
+    return devices[choice] if choice > -1 and choice < len(devices) else ''
 
 def adb_push_string(content, filepath, devices):
     tmp_file = './adb_push_string.tmp'
@@ -77,6 +77,3 @@ def print_return(preprint, output):
 def exit(returncode):
     print rc[returncode]
     sys.exit(returncode)
-
-# def remount_devices(devices):
-#     return [d for d in devices if 'remount succeeded' not in shell('adb -s %s remount' % d)]
