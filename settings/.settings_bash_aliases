@@ -1,0 +1,27 @@
+# Functions
+git.checkout.topath() { git show "$1":"$2" > "$3"; }
+
+# Aliases
+alias cd.githubsandbox='cd /shares/github_sandbox/'
+alias adb.restart='adb kill-server;sudo adb start-server;'
+alias g.s='git status'
+alias g.a='git add --all'
+alias git.stash.unstaged='git stash save --keep-index;'
+alias git.drop.unstaged='git stash save --keep-index; git stash drop;'
+alias git.stash.unstaged='git stash save --keep-index;'
+alias git.ignore='git rm --cached;'
+alias git.kraken='gitkraken --path ./ > /dev/null &'
+alias padb='python /shares/github_sandbox/scripts/padb_script.py'
+alias a.d='adb devices'
+
+# Examples
+alias example.suppress_output='echo "sample output" > /dev/null'
+alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
+
+# Bash Modifications
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\W\[\033[00m\]\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\W\$'
+fi
+unset color_prompt force_color_prompt
