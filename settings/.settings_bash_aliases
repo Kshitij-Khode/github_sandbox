@@ -13,6 +13,8 @@ alias git.ignore='git rm --cached;'
 alias git.kraken='gitkraken --path ./ > /dev/null &'
 alias padb='python /shares/github_sandbox/scripts/padb_script.py'
 alias a.d='adb devices'
+alias ssh.genkey='ssh-keygen -b 4096 -t rsa'
+alias cat.hosts='cat /etc/hosts'
 
 # Examples
 alias example.suppress_output='echo "sample output" > /dev/null'
