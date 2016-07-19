@@ -1,8 +1,15 @@
+#!/bin/bash
+
 # Functions
 git.checkout.topath() { git show "$1":"$2" > "$3"; }
 git.init() { git init --bare "$1"; }
+mount.basic() { sudo mount -o "$1",remount "$2"; }
+net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
 
 # Aliases
+alias ldir='du -sh *'
+alias bash.refresh='. ~/.bashrc'
+alias cd.homesandbox='cd ~/home_sandbox/'
 alias cd.githubsandbox='cd /shares/github_sandbox/'
 alias adb.restart='adb kill-server;sudo adb start-server;'
 alias g.s='git status'
@@ -10,17 +17,26 @@ alias g.a='git add --all'
 alias git.stash.unstaged='git stash save --keep-index;'
 alias git.drop.unstaged='git stash save --keep-index; git stash drop;'
 alias git.ignore='git rm --cached;'
-alias git.kraken='gitkraken --path ./ > /dev/null &'
+alias git.smartgit='sh ~/home_sandbox/installed_software/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
 alias padb='python /shares/github_sandbox/scripts/padb_script.py'
 alias a.d='adb devices'
 alias ssh.genkey='ssh-keygen -b 4096 -t rsa'
 alias cat.hosts='cat /etc/hosts'
+alias net.routes.default='sudo ping -b 192.168.1.255 -c 3 -w 3; arp -a;'
 
 # Examples
 alias example.suppress_output='echo "sample output" > /dev/null'
 alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
 
-# Bash Modifications
+# # Bash Modifications
+force_color_prompt=yes
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+    color_prompt=yes
+    else
+    color_prompt=
+    fi
+fi
 if [ "$color_prompt" = yes ]; then
     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\W\[\033[00m\]\$ '
 else
