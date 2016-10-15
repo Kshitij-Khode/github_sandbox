@@ -9,6 +9,7 @@ net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
 # Aliases
 alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
+alias bash.alias.edit='vi /shares/github_sandbox/settings_files/.settings_bash_aliases'
 alias cd.homesandbox='cd ~/home_sandbox/'
 alias cd.githubsandbox='cd /shares/github_sandbox/'
 alias adb.restart='adb kill-server;sudo adb start-server;'
@@ -27,6 +28,7 @@ alias net.routes.default='sudo ping -b 192.168.1.255 -c 3 -w 3; arp -a;'
 # Examples
 alias example.suppress_output='echo "sample output" > /dev/null'
 alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
+alias bluetooth.commandline='bluetoothctl' # --help
 
 # # Bash Modifications
 force_color_prompt=yes
