@@ -3,6 +3,7 @@
 #include <cmath>
 #include <dlib/matrix.h>
 #include <dlib/statistics.h>
+#include <dlib/matrix/matrix_la_abstract.h>
 
 using namespace dlib;
 using namespace std;
@@ -39,7 +40,14 @@ int main()
     matrix<double> mat_t;
     matrix<double> mat_s;
     matrix<double> mat_mconst;
+    matrix<double> mat_rterm;
+    matrix<double> mat_rterm0;
+    matrix<double> mat_rterm1;
+    matrix<double> mat_rterm_eigen;
+    matrix<double> mat_rterm0_eigen;
+    matrix<double> mat_rterm1_eigen;
     matrix<double> mat_temp;
+    double         avg_sq_error;
 
     mat_t.set_size(6,1);
     mat_t = 5,
@@ -71,7 +79,7 @@ int main()
     mat_mconst.set_size(3,1);
     mat_mconst = inv(trans(mat_t) * mat_t) * trans(mat_t) * mat_s;
 
-    double avg_sq_error = avg_sq_error_novectorlib(trans(mat_s), trans(mat_mconst)*trans(mat_t));
+    avg_sq_error = avg_sq_error_novectorlib(trans(mat_s), trans(mat_mconst)*trans(mat_t));
     if (avg_sq_error < 0) exception_handler(-1);
 
     // Print Answer and format answer for readability
@@ -81,10 +89,16 @@ int main()
          << "    R: "
          << avg_sq_error << endl;
 
-    double lambda = 0.5;
-    mat_mconst    =  inv(trans(mat_t)*mat_t + lambda*identity_matrix<double>(6))
-                  *  trans(mat_t)
-                  *  mat_s;
+    mat_mconst.set_size(3,1);
+    mat_rterm .set_size(6,6);
+    mat_rterm0.set_size(6,6);
+    mat_rterm1.set_size(6,6);
+    mat_rterm0 = trans(mat_t)*mat_t;
+    mat_rterm1 = 0.5*identity_matrix<double>(3);
+    mat_rterm  = inv(mat_rterm0 + mat_rterm1);
+    mat_mconst = mat_rterm
+               * trans(mat_t)
+               * mat_s;
 
     avg_sq_error  = avg_sq_error_novectorlib(trans(mat_s), trans(mat_mconst)*trans(mat_t));
     if (avg_sq_error < 0) exception_handler(-1);
@@ -95,4 +109,15 @@ int main()
          << trans(mat_mconst)
          << "    R: "
          << avg_sq_error << endl;
+
+    mat_rterm_eigen  = real_eigenvalues(mat_rterm);
+    mat_rterm0_eigen = real_eigenvalues(mat_rterm0);
+    mat_rterm1_eigen = real_eigenvalues(mat_rterm1);
+
+    cout << mat_rterm;
+    cout << mat_rterm0;
+    cout << mat_rterm1;
+    cout << mat_rterm_eigen;
+    cout << mat_rterm0_eigen;
+    cout << mat_rterm1_eigen;
 }

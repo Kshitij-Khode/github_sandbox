@@ -11,7 +11,9 @@ alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
 alias bash.alias.edit='vi /shares/github_sandbox/settings_files/.settings_bash_aliases'
 alias cd.homesandbox='cd ~/home_sandbox/'
-alias cd.githubsandbox='cd /shares/github_sandbox/'
+alias cd.githubsandbox.currentml='cd /shares/github_sandbox/ml_assignments/assignment_1/'
+alias cd.launcherentries='cd /usr/share/applications/'
+alias googledrive.pull.studentresources='drive-google pull ~/google_drive/Study\ Resources/'
 alias adb.restart='adb kill-server;sudo adb start-server;'
 alias g.s='git status'
 alias g.a='git add --all'
@@ -45,3 +47,6 @@ else
     PS1='${debian_chroot:+($debian_chroot)}\u@\W\$'
 fi
 unset color_prompt force_color_prompt
+
+# Temporary Items
+alias build.assignment1q2='g++ -std=c++11 "/shares/github_sandbox/ml_assignments/assignment_1/q2.cpp" -o "/shares/github_sandbox/ml_assignments/assignment_1/q2.kkignore" -I "/shares/dlib/"; /shares/github_sandbox/ml_assignments/assignment_1/q2.kkignore;'
