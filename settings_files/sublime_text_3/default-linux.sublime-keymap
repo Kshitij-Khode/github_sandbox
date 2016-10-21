@@ -1,0 +1,7 @@
+// Initialization Items
+// ln -s ~/repos/github_sandbox/settings_files/sublime_text_3/default-linux.sublime-keymap
+//       ~/.config/sublime-text-3/Packages/User/Default\ \(Linux\).sublime-keymap
+
+[
+	{ "keys": ["ctrl+alt+enter"], "command": "goto_definition" }
+]

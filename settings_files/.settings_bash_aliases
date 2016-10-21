@@ -9,9 +9,9 @@ net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
 # Aliases
 alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
-alias bash.alias.edit='vi /shares/github_sandbox/settings_files/.settings_bash_aliases'
+alias bash.alias.edit='vi ~/repos/github_sandbox/settings_files/.settings_bash_aliases'
 alias cd.homesandbox='cd ~/home_sandbox/'
-alias cd.githubsandbox.currentml='cd /shares/github_sandbox/ml_assignments/assignment_1/'
+alias cd.githubsandbox.currentml='cd ~/repos/github_sandbox/ml_assignments/assignment_1/'
 alias cd.launcherentries='cd /usr/share/applications/'
 alias googledrive.pull.studentresources='drive-google pull ~/google_drive/Study\ Resources/'
 alias adb.restart='adb kill-server;sudo adb start-server;'
@@ -21,11 +21,12 @@ alias git.stash.unstaged='git stash save --keep-index;'
 alias git.drop.unstaged='git stash save --keep-index; git stash drop;'
 alias git.ignore='git rm --cached;'
 alias git.smartgit='sh ~/home_sandbox/installed_software/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
-alias padb='python /shares/github_sandbox/scripts/padb_script.py'
+alias padb='python ~/repos/github_sandbox/scripts/padb_script.py'
 alias a.d='adb devices'
 alias ssh.genkey='ssh-keygen -b 4096 -t rsa'
 alias cat.hosts='cat /etc/hosts'
 alias net.routes.default='sudo ping -b 192.168.1.255 -c 3 -w 3; arp -a;'
+alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
 
 # Examples
 alias example.suppress_output='echo "sample output" > /dev/null'
@@ -48,5 +49,12 @@ else
 fi
 unset color_prompt force_color_prompt
 
-# Temporary Items
-alias build.assignment1q2='g++ -std=c++11 "/shares/github_sandbox/ml_assignments/assignment_1/q2.cpp" -o "/shares/github_sandbox/ml_assignments/assignment_1/q2.kkignore" -I "/shares/dlib/"; /shares/github_sandbox/ml_assignments/assignment_1/q2.kkignore;'
+
+if command -v tmux>/dev/null; then
+  [[ ! $TERM =~ screen ]] && [ -z $TMUX ] && exec tmux
+fi
+
+
+# Disabled Items
+# alias googledrive.pull.studentresources='drive-google pull ~/google_drive/Study\ Resources/'
+# alias git.smartgit='sh ~/home_sandbox/installed_software/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
