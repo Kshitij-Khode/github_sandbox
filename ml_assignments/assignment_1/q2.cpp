@@ -43,10 +43,10 @@ int main()
     matrix<double> mat_rterm;
     matrix<double> mat_rterm0;
     matrix<double> mat_rterm1;
-    matrix<double> mat_rterm_eigen;
     matrix<double> mat_rterm0_eigen;
     matrix<double> mat_rterm1_eigen;
     matrix<double> mat_temp;
+    matrix<double> mat_temp_eigen;
     double         avg_sq_error;
 
     mat_t.set_size(6,1);
@@ -73,8 +73,7 @@ int main()
     mat_mconst.set_size(1,3);
     mat_mconst = trans(mat_s) * inv(trans(mat_t));
 
-    // Print Answer
-    cout << "Solving equation 2(a):" << endl << "    Coefficients: " << mat_mconst;
+    cout << "Solving equation 2(a):" << endl << "    Coefficients: " << mat_mconst << endl;
 
     mat_mconst.set_size(3,1);
     mat_mconst = inv(trans(mat_t) * mat_t) * trans(mat_t) * mat_s;
@@ -82,20 +81,23 @@ int main()
     avg_sq_error = avg_sq_error_novectorlib(trans(mat_s), trans(mat_mconst)*trans(mat_t));
     if (avg_sq_error < 0) exception_handler(-1);
 
-    // Print Answer and format answer for readability
     cout << "Answer 2(a,c):" << endl
          << "    Coefficients: "
          << trans(mat_mconst)
          << "    R: "
-         << avg_sq_error << endl;
+         << avg_sq_error << endl << endl;
 
     mat_mconst.set_size(3,1);
-    mat_rterm .set_size(6,6);
     mat_rterm0.set_size(6,6);
     mat_rterm1.set_size(6,6);
+    mat_temp  .set_size(6,6);
+    mat_rterm .set_size(6,6);
     mat_rterm0 = trans(mat_t)*mat_t;
     mat_rterm1 = 0.5*identity_matrix<double>(3);
-    mat_rterm  = inv(mat_rterm0 + mat_rterm1);
+
+    mat_temp   = mat_rterm0 + mat_rterm1;
+    mat_rterm  = inv(mat_temp);
+
     mat_mconst = mat_rterm
                * trans(mat_t)
                * mat_s;
@@ -103,21 +105,41 @@ int main()
     avg_sq_error  = avg_sq_error_novectorlib(trans(mat_s), trans(mat_mconst)*trans(mat_t));
     if (avg_sq_error < 0) exception_handler(-1);
 
-    // Print Answer and format answer for readability
     cout << "Answer 2(b,c):" << endl
          << "    Coefficients: "
          << trans(mat_mconst)
          << "    R: "
-         << avg_sq_error << endl;
+         << avg_sq_error << endl << endl;
 
-    mat_rterm_eigen  = real_eigenvalues(mat_rterm);
+    mat_temp_eigen  .set_size(3,1);
+    mat_rterm0_eigen.set_size(3,1);
+    mat_rterm1_eigen.set_size(3,1);
+    mat_temp_eigen   = real_eigenvalues(mat_temp);
     mat_rterm0_eigen = real_eigenvalues(mat_rterm0);
     mat_rterm1_eigen = real_eigenvalues(mat_rterm1);
 
-    cout << mat_rterm;
-    cout << mat_rterm0;
-    cout << mat_rterm1;
-    cout << mat_rterm_eigen;
-    cout << mat_rterm0_eigen;
-    cout << mat_rterm1_eigen;
+    cout << "Answer 2(d): Since all eigen values of the following matrices are non-zero, all of them are full rank"
+         << endl << "Eigen values of Xt*X - lambda*I:"  << endl
+         << mat_rterm0_eigen << "Eigen values of XtX:" << endl
+         << mat_rterm1_eigen << "Eigen values of lambda*I:" << endl
+         << mat_temp_eigen << endl;
+
+    mat_rterm0.set_size(2,2);
+    mat_rterm1.set_size(2,2);
+    mat_temp  .set_size(2,2);
+    mat_rterm0 =  1, -1,
+                 -1,  1;
+    mat_rterm1 = 0.5*identity_matrix<double>(2);
+    mat_temp   = mat_rterm0 + mat_rterm1;
+
+    mat_temp_eigen   = real_eigenvalues(mat_temp);
+    mat_rterm0_eigen = real_eigenvalues(mat_rterm0);
+    mat_rterm1_eigen = real_eigenvalues(mat_rterm1);
+
+    cout << "Answer 2(d): Now Xt*X = [1 -1; -1 1] is not full-rank (non-invertible) since some of it's eigen values are"
+         << "0. However Xt*X - lambda*I is full-rank (invertible) because all of it's eigen values are non-zero."
+         << endl << "Eigen values of Xt*X - lambda*I:"  << endl
+         << mat_temp_eigen << "Eigen values of XtX:" << endl
+         << mat_rterm0_eigen << "Eigen values of lambda*I:" << endl
+         << mat_rterm1_eigen << endl;
 }
