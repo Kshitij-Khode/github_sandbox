@@ -1,20 +1,16 @@
-// Initialization Items
-// ln -s ~/repos/github_sandbox/settings_files/sublime_text_3/Preferences.sublime-settings
-//       ~/.config/sublime-text-3/Packages/User/Preferences.sublime-settings
-
 {
 	"font_size": 8,
 	"ignored_packages":
 	[
 		"Vintage"
 	],
-    "tab_size": 4,
-    "translate_tabs_to_spaces": true,
-    "rulers":
+	"rulers":
 	[
 		100,
 		120
 	],
+	"tab_size": 4,
+	"translate_tabs_to_spaces": true,
 	"trim_trailing_white_space_on_save": true,
 	"word_wrap": "false"
 }

@@ -1,0 +1,15 @@
+cmake_minimum_required (VERSION 2.6)
+project (ml_assignments)
+
+# Version Info
+set (ML_ASSIGNMENT_NUM 1)
+
+# CMake Header Declaration
+configure_file (
+  "./cmake_ml_assignment_1.h.in"
+  "./cmake_ml_assignment_1.h"
+)
+
+include_directories("~/repos/dlib/")
+
+add_executable(ml_assignments q2.cpp)

@@ -5,6 +5,7 @@ git.checkout.topath() { git show "$1":"$2" > "$3"; }
 git.init() { git init --bare "$1"; }
 mount.basic() { sudo mount -o "$1",remount "$2"; }
 net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
+find.name.path() { sudo find "$1" -name "$2"; }
 
 # Aliases
 alias ldir='du -sh *'
@@ -25,11 +26,14 @@ alias ssh.genkey='ssh-keygen -b 4096 -t rsa'
 alias cat.hosts='cat /etc/hosts'
 alias net.routes.default='sudo ping -b 192.168.1.255 -c 3 -w 3; arp -a;'
 alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
+alias desktop.launcher.add='vi /usr/share/app-install/desktop/template.desktop'
+alias bluetooth.commandline='bluetoothctl' # --help
+alias git.smartgit='sh ~/home_sandbox/installed_software/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
 
 # Examples
 alias example.suppress_output='echo "sample output" > /dev/null'
 alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
-alias bluetooth.commandline='bluetoothctl' # --help
+alias example.desktop.launcher='cat /usr/share/app-install/desktop/gip\:gip.desktop'
 
 # # Bash Modifications
 force_color_prompt=yes
@@ -47,12 +51,6 @@ else
 fi
 unset color_prompt force_color_prompt
 
-
-if command -v tmux>/dev/null; then
-  [[ ! $TERM =~ screen ]] && [ -z $TMUX ] && exec tmux
-fi
-
-
 # Disabled Items
 # alias googledrive.pull.studentresources='drive-google pull ~/google_drive/Study\ Resources/'
-# alias git.smartgit='sh ~/home_sandbox/installed_software/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
+# ln -s ~/repos/github_sandbox/settings_files/sublime_text_3/Preferences.sublime-settings ~/.config/sublime-text-3/Packages/User/Preferences.sublime-settings

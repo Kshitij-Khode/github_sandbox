@@ -1,0 +1,2 @@
+// CMake Options and Configs
+#define ML_ASSIGNMENT_NUM @ML_ASSIGNMENT@
