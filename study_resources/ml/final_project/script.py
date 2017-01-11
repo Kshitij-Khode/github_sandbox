@@ -100,11 +100,10 @@ def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion Matrix', 
 
 
 data               = pd.read_csv("./creditcard.csv")
-data.head()
 countClasses       = pd.value_counts(data['Class'], sort = True).sort_index()
-data['normAmount'] = stdScaler().fit_transform(data['Amount'].reshape(-1, 1))
+pcaHelper          = pca(n_components=1)
+data['PCA']        = pcaHelper.fit_transform(data.as_matrix(columns=['Time', 'Amount']))
 data               = data.drop(['Time','Amount'], axis=1)
-data.head()
 X                  = data.ix[:, data.columns != 'Class']
 Y                  = data.ix[:, data.columns == 'Class']
 noOfFrauds         = len(data[data.Class == 1])
