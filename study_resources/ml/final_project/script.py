@@ -1,4 +1,4 @@
-import pandas as pd, matplotlib.pyplot as plt, numpy as np, itertools as it
+from __future__                 import division
 from   sklearn.decomposition    import PCA                as pca
 from   sklearn.preprocessing    import StandardScaler     as stdScaler
 from   sklearn.cross_validation import train_test_split   as cvSplit
@@ -13,45 +13,24 @@ from   sklearn.metrics          import roc_curve              as rocCurve
 from   sklearn.metrics          import recall_score           as recallScore
 from   sklearn.metrics          import classification_report  as classificationReport
 
-def drawImblalancedTrainingSet(countClasses, plotHelper):
-    countClasses.plot(kind='bar')
-    plotHelper.title("Fraud class histogram")
-    plotHelper.xlabel("Class")
-    plotHelper.ylabel("Frequency")
+import pandas as pd, matplotlib.pyplot as plt, numpy as np, itertools as it
 
-def printDataStatistics():
-    print("Percentage of normal transactions: ", len(underSampleData[underSampleData.Class == 0]) / len(underSampleData))
-    print("Percentage of fraud transactions: ", len(underSampleData[underSampleData.Class == 1]) / len(underSampleData))
-    print("Total number of transactions in resampled data: ", len(underSampleData))
-    print("Number transactions train dataset: ", len(xTrain))
-    print("Number transactions test dataset: ", len(xTest))
-    print("Total number of transactions: ", len(xTrain)+len(xTest))
-    print("Number transactions train dataset: ", len(xTrainUnderSample))
-    print("Number transactions test dataset: ", len(xTestUnderSample))
-    print("Total number of transactions: ", len(yTestUnderSample)+len(xTestUnderSample))
+def doUnderSample(data, verbose=False):
+    noOfFrauds         = len(data[data.Class == 1])
+    fraudIndices       = np.array(data[data.Class == 1].index)
+    normalIndices      = data[data.Class == 0].index
+    rNormalIndices     = np.random.choice(normalIndices, noOfFrauds, replace = False)
+    rNormalIndices     = np.array(rNormalIndices)
+    underSampleIndices = np.concatenate([fraudIndices, rNormalIndices])
+    underSampleData    = data.iloc[underSampleIndices,:]
+    xUnderSample       = underSampleData.ix[:, underSampleData.columns != 'Class']
+    yUnderSample       = underSampleData.ix[:, underSampleData.columns == 'Class']
+    if verbose:
+        print("Normal Transactions in Undersampled data: ", len(underSampleData[underSampleData.Class == 0]))
+        print("Fraud Transactions in Undersampled data", len(underSampleData[underSampleData.Class == 1]))
+    return xUnderSample, yUnderSample
 
-
-def drawConfusionMatrix(yData, yPred, plotHelper=plt, numpyHelper=np, verbose=False):
-    cnfMatrix = confMat(yData, yPred)
-    numpyHelper.set_printoptions(precision=2)
-    if verbose: print("Recall metric in the testing dataset: ", cnfMatrix[1,1]/(cnfMatrix[1,0]+cnfMatrix[1,1]))
-    classNames = [0,1]
-    plotHelper.figure()
-    plotConfusionMatrix(cnfMatrix, classes=classNames, title='Confusion Matrix')
-
-def drawRocCurve(yData, yPredScore, plotHelper=plt):
-    fpr, tpr, thresholds  = rocCurve(yData.values.ravel(), yPredScore)
-    rocAuc                = auc(fpr, tpr)
-    plotHelper.title('Receiver Operating Characteristic')
-    plotHelper.plot(fpr, tpr, 'b', label='AUC = %0.2f' % rocAuc)
-    plotHelper.legend(loc='lower right')
-    plotHelper.plot([0,1], [0,1], 'r--')
-    plotHelper.xlim([-0.1, 1.0])
-    plotHelper.ylim([-0.1, 1.01])
-    plotHelper.ylabel('True Positive Rate')
-    plotHelper.xlabel('False Positive Rate')
-
-def printKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbose=False):
+def doKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbose=False):
     fold         = kFold(len(yTrainData), 5, shuffle=False)
     cParamRange  = [0.01, 0.1, 1, 10, 100]
     resultsTable = pandasHelper.DataFrame(index=range(len(cParamRange), 2), columns=['C_parameter','Mean recall score'])
@@ -79,6 +58,28 @@ def printKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, ve
         print('*********************************************************************************')
     return bestC
 
+def printCVDataStats(xTrain, xTest, xTrainUnderSample, xTestUnderSample):
+    print("Transactions in Training: ", len(xTrain))
+    print("Transactions in Testing: ", len(xTest))
+    print("Transactions in UnderSample Training: ", len(xTrainUnderSample))
+    print("Transactions in UnderSample Testing: ", len(xTestUnderSample))
+
+
+def drawImblalancedTrainingSet(countClasses, plotHelper=plt):
+    countClasses.plot(kind='bar')
+    plotHelper.title("Fraud class histogram")
+    plotHelper.xlabel("Class")
+    plotHelper.ylabel("Frequency")
+
+def drawConfusionMatrix(yData, yPred, plotHelper=plt, numpyHelper=np, verbose=False):
+    cnfMatrix = confMat(yData, yPred)
+    numpyHelper.set_printoptions(precision=2)
+    if verbose: print("Recall metric in the testing dataset: ", cnfMatrix[1,1]/(cnfMatrix[1,0]+cnfMatrix[1,1]))
+    classNames = [0,1]
+    plotHelper.figure()
+    plotConfusionMatrix(cnfMatrix, classes=classNames, title='Confusion Matrix::Recall: %0.5f' \
+                     % ((cnfMatrix[1,1]*100.0)/(cnfMatrix[1,0]+cnfMatrix[1,1])))
+
 def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion Matrix', plotHelper=plt, numpyHelper=np):
     plotHelper.imshow(cm, interpolation='nearest', cmap=plotHelper.cm.Blues)
     plotHelper.title(title)
@@ -98,55 +99,52 @@ def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion Matrix', 
 
 # --------------------------------------------------
 
+# Read, anonymise and undersample data
+data                       = pd.read_csv("./creditcard.csv")
+countClasses               = pd.value_counts(data['Class'], sort = True).sort_index()
+pcaHelper                  = pca(n_components=1)
+data['PCA']                = pcaHelper.fit_transform(data.as_matrix(columns=['Time', 'Amount']))
+data                       = data.drop(['Time','Amount'], axis=1)
+X                          = data.ix[:, data.columns != 'Class']
+Y                          = data.ix[:, data.columns == 'Class']
+xUnderSample, yUnderSample = doUnderSample(data)
 
-data               = pd.read_csv("./creditcard.csv")
-countClasses       = pd.value_counts(data['Class'], sort = True).sort_index()
-pcaHelper          = pca(n_components=1)
-data['PCA']        = pcaHelper.fit_transform(data.as_matrix(columns=['Time', 'Amount']))
-data               = data.drop(['Time','Amount'], axis=1)
-X                  = data.ix[:, data.columns != 'Class']
-Y                  = data.ix[:, data.columns == 'Class']
-noOfFrauds         = len(data[data.Class == 1])
-fraudIndices       = np.array(data[data.Class == 1].index)
-normalIndices      = data[data.Class == 0].index
-rNormalIndices     = np.random.choice(normalIndices, noOfFrauds, replace = False)
-rNormalIndices     = np.array(rNormalIndices)
-underSampleIndices = np.concatenate([fraudIndices, rNormalIndices])
-underSampleData    = data.iloc[underSampleIndices,:]
-xUnderSample       = underSampleData.ix[:, underSampleData.columns != 'Class']
-yUnderSample       = underSampleData.ix[:, underSampleData.columns == 'Class']
-
+# Create and print stats for cross validation data pieces
 xTrain, xTest, yTrain, yTest = cvSplit(X, Y, test_size = 0.3, random_state = 0)
 xTrainUnderSample, xTestUnderSample, yTrainUnderSample, yTestUnderSample = cvSplit(xUnderSample,    \
                                                                                    yUnderSample,    \
                                                                                    test_size=0.3,   \
                                                                                    random_state=0   )
+# printCVDataStats(xTrain, xTest, xTrainUnderSample, xTestUnderSample)
 
-bestC                 = printKFoldScores(xTrainUnderSample, yTrainUnderSample)
-lr                    = lReg(C=bestC, penalty='l1')
+bestC                 = doKFoldScores(xTrainUnderSample, yTrainUnderSample)
+lr                    = lReg(C=bestC, penalty='l2')
 lr.fit(xTrainUnderSample, yTrainUnderSample.values.ravel())
 yPredUnderSample      = lr.predict(xTestUnderSample.values)
 yPred                 = lr.predict(xTest.values)
-yPredUnderSampleScore = lr.fit(xTrainUnderSample, yTrainUnderSample.values.ravel()).decision_function(xTestUnderSample.values)
-
-drawConfusionMatrix(yTestUnderSample, yPredUnderSample)
-drawConfusionMatrix(yTest, yPred)
-drawRocCurve(yTestUnderSample, yPredUnderSampleScore)
-
 lr.fit(xTrain, yTrain.values.ravel())
-yPredUnderSample = lr.predict(xTest.values)
-drawConfusionMatrix(yTest, yPredUnderSample)
+yPredNoUnderSample    = lr.predict(xTest.values)
 
-lr                   = lReg(C=0.01, penalty='l1')
+# Show the degree of imbalance in the dataset
+drawImblalancedTrainingSet(countClasses)
+
+# Show > 90% recall in training
+drawConfusionMatrix(yTestUnderSample, yPredUnderSample)
+
+# Show > 90% recall in training
+drawConfusionMatrix(yTest, yPred)
+
+# Show horrible % recall if undersampling is not done
+drawConfusionMatrix(yTest, yPredNoUnderSample)
+
+# Retrain with undersample and show precision vs recall trade off (Increasing normal transaction marked as fraud)
 lr.fit(xTrainUnderSample, yTrainUnderSample.values.ravel())
 yPredUnderSampleProb = lr.predict_proba(xTestUnderSample.values)
 thresholds           = np.arange(0.1, 1, 0.1)
-
 plt.figure(figsize=(10,10))
 for j, i in enumerate(thresholds, start=1):
     yTestPredHighRecall = yPredUnderSampleProb[:,1] > i
-    plt.subplot(3,3,j)
     drawConfusionMatrix(yTestUnderSample, yTestPredHighRecall)
 
-# See all the plots (Imbalanced training set, COnfusion matrix of training and test
+# Show any plots if drawn
 # plt.show()
