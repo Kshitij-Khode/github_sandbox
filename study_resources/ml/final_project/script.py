@@ -95,6 +95,18 @@ def drawConfusionMatrix(yData, yPred, plotHelper=plt, numpyHelper=np, verbose=Fa
     plotConfusionMatrix(cnfMatrix, classes=classNames, title='Confusion Matrix::Recall: %0.5f' \
                      % ((cnfMatrix[1,1]*100.0)/(cnfMatrix[1,0]+cnfMatrix[1,1])))
 
+def drawRocCurve(yTestSampled, yPredSampledScore, plotHelper=plt):
+    fpr, tpr, thresholds = rocCurve(yTestSampled.values.ravel(), yPredSampledScore)
+    rocAuc               = auc(fpr,tpr)
+    plotHelper.title('Receiver Operating Characteristic')
+    plotHelper.plot(fpr, tpr, 'b',label='AUC = %0.2f'% rocAuc)
+    plotHelper.legend(loc='lower right')
+    plotHelper.plot([0,1],[0,1],'r--')
+    plotHelper.xlim([-0.1,1.0])
+    plotHelper.ylim([-0.1,1.01])
+    plotHelper.ylabel('True Positive Rate')
+    plotHelper.xlabel('False Positive Rate')
+
 def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion Matrix', plotHelper=plt, numpyHelper=np):
     plotHelper.imshow(cm, interpolation='nearest', cmap=plotHelper.cm.Blues)
     plotHelper.title(title)
@@ -125,7 +137,7 @@ Y                          = data.ix[:, data.columns == 'Class']
 
 
 # Choose execution type (0, 1) with undersampled or oversampled data
-xSampled, ySampled = doSampling(data, X, Y, type=1)
+xSampled, ySampled = doSampling(data, X, Y, type=0)
 
 # Create and print stats for cross validation data pieces
 xTrain, xTest, yTrain, yTest = cvSplit(X, Y, test_size = 0.3, random_state = 0)
@@ -145,19 +157,24 @@ lr.fit(xTrain, yTrain.values.ravel())
 yPredNoSampled        = lr.predict(xTest.values)
 
 # Show the degree of imbalance in the dataset
-drawImblalancedTrainingSet(countClasses)
+# drawImblalancedTrainingSet(countClasses)
 
 # Show > 90% recall in training
-drawConfusionMatrix(yTestSampled, yPredSampled)
+# drawConfusionMatrix(yTestSampled, yPredSampled)
 
-# Show > 90% recall in training
-drawConfusionMatrix(yTest, yPred)
+# Show > 90% recall in testing
+# drawConfusionMatrix(yTest, yPred)
 
 # Show horrible % recall if sampling is not done
-drawConfusionMatrix(yTest, yPredNoSampled)
+# drawConfusionMatrix(yTest, yPredNoSampled)
 
-# Retrain with sampled data and show precision vs recall trade off (Increasing normal transaction marked as fraud)
-# lr.fit(xTrainSampled, yTrainSampled.values.ravel())
+# Prep for drawing ROC curve
+yPredSampledScore = lr.fit(xTrainSampled, yTrainSampled.values.ravel()).decision_function(xTestSampled.values)
+
+# Show TP vs FP tradeoff
+# drawRocCurve(yTestSampled, yPredSampledScore)
+
+# Show precision vs recall trade off with manually changing thresholds (Normal transaction marked as fraud increasingly)
 # yPredSampledProb = lr.predict_proba(xTestSampled.values)
 # thresholds       = np.arange(0.1, 1, 0.1)
 # plt.figure(figsize=(10,10))
@@ -166,4 +183,4 @@ drawConfusionMatrix(yTest, yPredNoSampled)
 #     drawConfusionMatrix(yTestSampled, yTestPredHighRecall)
 
 # Show any plots if drawn
-plt.show()
+# plt.show()
