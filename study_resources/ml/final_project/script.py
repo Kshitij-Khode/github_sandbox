@@ -12,6 +12,7 @@ from   sklearn.metrics          import roc_auc_score          as rocAucScore
 from   sklearn.metrics          import roc_curve              as rocCurve
 from   sklearn.metrics          import recall_score           as recallScore
 from   sklearn.metrics          import classification_report  as classificationReport
+from   imblearn.over_sampling   import SMOTE                  as smote
 
 import pandas as pd, matplotlib.pyplot as plt, numpy as np, itertools as it
 
@@ -26,9 +27,23 @@ def doUnderSample(data, verbose=False):
     xUnderSample       = underSampleData.ix[:, underSampleData.columns != 'Class']
     yUnderSample       = underSampleData.ix[:, underSampleData.columns == 'Class']
     if verbose:
-        print("Normal Transactions in Undersampled data: ", len(underSampleData[underSampleData.Class == 0]))
-        print("Fraud Transactions in Undersampled data", len(underSampleData[underSampleData.Class == 1]))
+        print("Normal transactions in undersampled data: ", len(underSampleData[underSampleData.Class == 0]))
+        print("Fraud transactions in undersampled data", len(underSampleData[underSampleData.Class == 1]))
     return xUnderSample, yUnderSample
+
+def doOverSample(X, Y, verbose=False):
+    xOverSample, yOverSample   = smote(random_state=0).fit_sample(X, Y)
+    if verbose:
+        print("Normal transactions in oversampled data: ", len([normal for normal in yOverSample if normal == 0]))
+        print("Fraud transactions in oversampled data: ", len([fraud for fraud in yOverSample if fraud == 1]))
+    xOverSample                = [xOverSample[:,column] for column in range(len(xOverSample[0]))]
+    xOverSample                = { key: value for key, value in zip([xLabel for xLabel in X.keys()], xOverSample) }
+    yOverSample                = { key: value for key, value in zip([yLabel for yLabel in Y.keys()], [yOverSample]) }
+    return pd.DataFrame(xOverSample), pd.DataFrame(yOverSample)
+
+def doSampling(data, X, Y, type=0):
+    if type == 0: return doUnderSample(data)
+    else:         return doOverSample(X, Y)
 
 def doKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbose=False):
     fold         = kFold(len(yTrainData), 5, shuffle=False)
@@ -42,8 +57,8 @@ def doKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbo
         for iteration, indices in enumerate(fold, start=1):
             lr = lReg(C=cParam, penalty='l1')
             lr.fit(xTrainData.iloc[indices[0],:], yTrainData.iloc[indices[0],:].values.ravel())
-            yPredUnderSample = lr.predict(xTrainData.iloc[indices[1],:].values)
-            llAccum = recallScore(yTrainData.iloc[indices[1],:].values, yPredUnderSample)
+            yPredSampled = lr.predict(xTrainData.iloc[indices[1],:].values)
+            llAccum = recallScore(yTrainData.iloc[indices[1],:].values, yPredSampled)
             recallAccums.append(llAccum)
             if verbose: print('# Iteration ', iteration,': recall score = ', recallAccum)
 
@@ -58,11 +73,11 @@ def doKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbo
         print('*********************************************************************************')
     return bestC
 
-def printCVDataStats(xTrain, xTest, xTrainUnderSample, xTestUnderSample):
+def printCVDataStats(xTrain, xTest, xTrainSampled, xTestSampled):
     print("Transactions in Training: ", len(xTrain))
     print("Transactions in Testing: ", len(xTest))
-    print("Transactions in UnderSample Training: ", len(xTrainUnderSample))
-    print("Transactions in UnderSample Testing: ", len(xTestUnderSample))
+    print("Transactions in Sampled Training: ", len(xTrainSampled))
+    print("Transactions in Sampled Testing: ", len(xTestSampled))
 
 
 def drawImblalancedTrainingSet(countClasses, plotHelper=plt):
@@ -99,7 +114,7 @@ def plotConfusionMatrix(cm, classes, normalize=False, title='Confusion Matrix', 
 
 # --------------------------------------------------
 
-# Read, anonymise and undersample data
+# Read, anonymise and sample data
 data                       = pd.read_csv("./creditcard.csv")
 countClasses               = pd.value_counts(data['Class'], sort = True).sort_index()
 pcaHelper                  = pca(n_components=1)
@@ -107,44 +122,48 @@ data['PCA']                = pcaHelper.fit_transform(data.as_matrix(columns=['Ti
 data                       = data.drop(['Time','Amount'], axis=1)
 X                          = data.ix[:, data.columns != 'Class']
 Y                          = data.ix[:, data.columns == 'Class']
-xUnderSample, yUnderSample = doUnderSample(data)
+
+
+# Choose execution type (0, 1) with undersampled or oversampled data
+xSampled, ySampled = doSampling(data, X, Y, type=1)
 
 # Create and print stats for cross validation data pieces
 xTrain, xTest, yTrain, yTest = cvSplit(X, Y, test_size = 0.3, random_state = 0)
-xTrainUnderSample, xTestUnderSample, yTrainUnderSample, yTestUnderSample = cvSplit(xUnderSample,    \
-                                                                                   yUnderSample,    \
-                                                                                   test_size=0.3,   \
-                                                                                   random_state=0   )
-# printCVDataStats(xTrain, xTest, xTrainUnderSample, xTestUnderSample)
+xTrainSampled, xTestSampled, yTrainSampled, yTestSampled = cvSplit(xSampled,        \
+                                                                   ySampled,        \
+                                                                   test_size=0.3,   \
+                                                                   random_state=0)
+# printCVDataStats(xTrain, xTest, xTrainSampled, xTestSampled)
 
-bestC                 = doKFoldScores(xTrainUnderSample, yTrainUnderSample)
+# Do K-Fold to find optimal parameter for L2 regularization, train LR and test
+bestC                 = doKFoldScores(xTrainSampled, yTrainSampled)
 lr                    = lReg(C=bestC, penalty='l2')
-lr.fit(xTrainUnderSample, yTrainUnderSample.values.ravel())
-yPredUnderSample      = lr.predict(xTestUnderSample.values)
+lr.fit(xTrainSampled, yTrainSampled.values.ravel())
+yPredSampled          = lr.predict(xTestSampled.values)
 yPred                 = lr.predict(xTest.values)
 lr.fit(xTrain, yTrain.values.ravel())
-yPredNoUnderSample    = lr.predict(xTest.values)
+yPredNoSampled        = lr.predict(xTest.values)
 
 # Show the degree of imbalance in the dataset
 drawImblalancedTrainingSet(countClasses)
 
 # Show > 90% recall in training
-drawConfusionMatrix(yTestUnderSample, yPredUnderSample)
+drawConfusionMatrix(yTestSampled, yPredSampled)
 
 # Show > 90% recall in training
 drawConfusionMatrix(yTest, yPred)
 
-# Show horrible % recall if undersampling is not done
-drawConfusionMatrix(yTest, yPredNoUnderSample)
+# Show horrible % recall if sampling is not done
+drawConfusionMatrix(yTest, yPredNoSampled)
 
-# Retrain with undersample and show precision vs recall trade off (Increasing normal transaction marked as fraud)
-lr.fit(xTrainUnderSample, yTrainUnderSample.values.ravel())
-yPredUnderSampleProb = lr.predict_proba(xTestUnderSample.values)
-thresholds           = np.arange(0.1, 1, 0.1)
-plt.figure(figsize=(10,10))
-for j, i in enumerate(thresholds, start=1):
-    yTestPredHighRecall = yPredUnderSampleProb[:,1] > i
-    drawConfusionMatrix(yTestUnderSample, yTestPredHighRecall)
+# Retrain with sampled data and show precision vs recall trade off (Increasing normal transaction marked as fraud)
+# lr.fit(xTrainSampled, yTrainSampled.values.ravel())
+# yPredSampledProb = lr.predict_proba(xTestSampled.values)
+# thresholds       = np.arange(0.1, 1, 0.1)
+# plt.figure(figsize=(10,10))
+# for j, i in enumerate(thresholds, start=1):
+#     yTestPredHighRecall = yPredSampledProb[:,1] > i
+#     drawConfusionMatrix(yTestSampled, yTestPredHighRecall)
 
 # Show any plots if drawn
-# plt.show()
+plt.show()
