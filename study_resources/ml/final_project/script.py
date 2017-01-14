@@ -13,8 +13,11 @@ from   sklearn.metrics          import roc_curve              as rocCurve
 from   sklearn.metrics          import recall_score           as recallScore
 from   sklearn.metrics          import classification_report  as classificationReport
 from   imblearn.over_sampling   import SMOTE                  as smote
+from   sklearn.naive_bayes      import GaussianNB             as gaussianNB
+from   sklearn.metrics          import roc_auc_score          as rocAucScore
+from   sklearn.ensemble         import RandomForestClassifier as rfc
 
-import pandas as pd, matplotlib.pyplot as plt, numpy as np, itertools as it
+import pandas as pd, matplotlib.pyplot as plt, numpy as np, itertools as it, random
 
 def doUnderSample(data, verbose=False):
     noOfFrauds         = len(data[data.Class == 1])
@@ -140,10 +143,10 @@ Y                          = data.ix[:, data.columns == 'Class']
 xSampled, ySampled = doSampling(data, X, Y, type=0)
 
 # Create and print stats for cross validation data pieces
-xTrain, xTest, yTrain, yTest = cvSplit(X, Y, test_size = 0.3, random_state = 0)
-xTrainSampled, xTestSampled, yTrainSampled, yTestSampled = cvSplit(xSampled,        \
-                                                                   ySampled,        \
-                                                                   test_size=0.3,   \
+xTrain, xTest, yTrain, yTest = cvSplit(X, Y, test_size=random.random(), random_state = 0)
+xTrainSampled, xTestSampled, yTrainSampled, yTestSampled = cvSplit(xSampled,                    \
+                                                                   ySampled,                    \
+                                                                   test_size=random.random(),   \
                                                                    random_state=0)
 # printCVDataStats(xTrain, xTest, xTrainSampled, xTestSampled)
 
@@ -160,10 +163,10 @@ yPredNoSampled        = lr.predict(xTest.values)
 # drawImblalancedTrainingSet(countClasses)
 
 # Show > 90% recall in training
-# drawConfusionMatrix(yTestSampled, yPredSampled)
+drawConfusionMatrix(yTestSampled, yPredSampled)
 
 # Show > 90% recall in testing
-# drawConfusionMatrix(yTest, yPred)
+drawConfusionMatrix(yTest, yPred)
 
 # Show horrible % recall if sampling is not done
 # drawConfusionMatrix(yTest, yPredNoSampled)
@@ -182,5 +185,22 @@ yPredSampledScore = lr.fit(xTrainSampled, yTrainSampled.values.ravel()).decision
 #     yTestPredHighRecall = yPredSampledProb[:,1] > i
 #     drawConfusionMatrix(yTestSampled, yTestPredHighRecall)
 
+# Do naive bayes and compare
+# nb             = gaussianNB()
+# nb.fit(xTrainSampled, yTrainSampled)
+# yPredNBSampled = nb.predict(xTestSampled)
+
+# Show < 80% recall and auc for roc in training. Dump naive bayes
+# drawConfusionMatrix(yTestSampled, yPredNBSampled)
+# print("Naive Bayes Roc AUC Score: %0.2f " % (rocAucScore(yTestSampled, yPredNBSampled)))
+
+# Do random forest classifier and compare
+# rfc             = rfc().fit(xTrainSampled, yTrainSampled)
+# yPredRFCSampled = rfc.predict(xTestSampled)
+
+# Show ~ 90% recall and auc for roc in training. Logistic regression is stil better/
+# drawConfusionMatrix(yTestSampled, yPredRFCSampled)
+# print("Random Forest Classifier Roc AUC Score: %0.2f " % (rocAucScore(yTestSampled, yPredRFCSampled)))
+
 # Show any plots if drawn
-# plt.show()
+plt.show()
