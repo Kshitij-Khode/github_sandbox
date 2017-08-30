@@ -6,6 +6,7 @@ git.init() { git init --bare "$1"; }
 mount.basic() { sudo mount -o "$1",remount "$2"; }
 net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
 find.path.name() { sudo find "$1" -name "$2"; }
+gvim.open() { gvim "$1" &> /dev/null & }
 
 # Aliases
 alias ldir='du -sh *'
@@ -30,9 +31,10 @@ alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
 alias desktop.launcher.add='vi /usr/share/app-install/desktop/template.desktop'
 alias bluetooth.commandline='bluetoothctl' # --help
 alias git.smartgit='sh /usr/share/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
+alias gvim.start='gvim &> /dev/null &' 
 
 # Examples
-alias example.suppress_output='echo "sample output" > /dev/null'
+alias example.suppress_output='echo "sample output" &> /dev/null'
 alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
 alias example.desktop.launcher='cat /usr/share/app-install/desktop/gip\:gip.desktop'
 

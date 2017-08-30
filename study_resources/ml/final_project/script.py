@@ -63,7 +63,7 @@ def doKFoldScores(xTrainData, yTrainData, pandasHelper=pd, numpyHelper=np, verbo
             yPredSampled = lr.predict(xTrainData.iloc[indices[1],:].values)
             llAccum = recallScore(yTrainData.iloc[indices[1],:].values, yPredSampled)
             recallAccums.append(llAccum)
-            if verbose: print('# Iteration ', iteration,': recall score = ', recallAccum)
+            if verbose: print('# Iteration ', iteration,': recall score = ', llAccum)
 
         resultsTable.ix[j, 'Mean recall score'] = numpyHelper.mean(recallAccums)
         if verbose: print('# --> Mean recall score ', numpyHelper.mean(recallAccums))
@@ -151,7 +151,7 @@ xTrainSampled, xTestSampled, yTrainSampled, yTestSampled = cvSplit(xSampled,    
 # printCVDataStats(xTrain, xTest, xTrainSampled, xTestSampled)
 
 # Do K-Fold to find optimal parameter for L2 regularization, train LR and test
-bestC                 = doKFoldScores(xTrainSampled, yTrainSampled)
+bestC                 = doKFoldScores(xTrainSampled, yTrainSampled, verbose=True)
 lr                    = lReg(C=bestC, penalty='l2')
 lr.fit(xTrainSampled, yTrainSampled.values.ravel())
 yPredSampled          = lr.predict(xTestSampled.values)
