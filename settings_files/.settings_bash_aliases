@@ -31,7 +31,7 @@ alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
 alias desktop.launcher.add='vi /usr/share/app-install/desktop/template.desktop'
 alias bluetooth.commandline='bluetoothctl' # --help
 alias git.smartgit='sh /usr/share/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
-alias gvim.start='gvim &> /dev/null &' 
+alias gvim.start='gvim &> /dev/null &'
 
 # Examples
 alias example.suppress_output='echo "sample output" &> /dev/null'
