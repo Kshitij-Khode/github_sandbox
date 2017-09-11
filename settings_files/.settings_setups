@@ -3,3 +3,6 @@
 # Sublime setup
 ln -s /shares/github_sandbox/settings_files/sublime_text_3/Preferences.sublime-settings /home/kshitij/.config/sublime-text-3/Packages/User/	Preferences.sublime-settings
 ln -s /shares/github_sandbox/settings_files/sublime_text_3/Default\ \(Linux\).sublime-keymap /home/kshitij/.config/sublime-text-3/Packages/User/Default\ \(Linux\).sublime-keymap
+ln -s /mnt/hgfs/Google\ Drive/ /home/kshitij/google_drive
+ln -s /home/kshitij/repos/github_sandbox/settings_files/vim.gnome/.vimrc /home/kshitij/.vimrc
+

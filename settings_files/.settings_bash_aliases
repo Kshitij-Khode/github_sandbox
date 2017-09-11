@@ -8,13 +8,15 @@ net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
 find.path.name() { sudo find "$1" -name "$2"; }
 gvim.open() { gvim "$1" &> /dev/null & }
 command.show() { grep -rn '/home/kshitij/repos/github_sandbox/settings_files/.settings_bash_aliases' -e "$1"; }
+tar.untar() { tar xvf $1 -C $2; }
+tar.comp() { tar cvf $1 $2; }
 
 # Aliases
 alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
 alias bash.alias.edit='vi ~/repos/github_sandbox/settings_files/.settings_bash_aliases'
 alias cd.homesandbox='cd ~/home_sandbox/'
-alias cd.githubsandbox.ml='cd ~/repos/github_sandbox/study_resources/ml/'
+alias cd.githubsandbox.cs='cd ~/repos/github_sandbox/study_resources/18600_fcs'
 alias cd.githubsandbox='cd ~/repos/github_sandbox/'
 alias cd.launcherentries='cd /usr/share/applications/'
 alias adb.restart='adb kill-server;sudo adb start-server;'
