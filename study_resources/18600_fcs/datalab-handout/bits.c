@@ -256,9 +256,7 @@ int bang(int x) {
  */
 unsigned float_abs(unsigned uf) {
   unsigned abs_uf = uf & 0x7FFFFFFF;
-  if (abs_uf >= 0x7F800001) {
-    return uf;
-  }
+  if (abs_uf >= 0x7F800001) return uf;
   return abs_uf;
 }
 /*
@@ -275,7 +273,10 @@ unsigned float_abs(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_pwr2(int x) {
-    return 2;
+  if      (x > 127)                 return 0x7f800000;
+  else if (x <= 127 && x > -127)    return (x + 0x7F) << 23;
+  else if (x <= -127 && x >= -149)  return 1 << (149 + x);
+  return 0;
 }
 /*
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -287,5 +288,24 @@ unsigned float_pwr2(int x) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  return 2;
+  /* http://binary-system.base-conversion.ro used as reference for figuring corner cases */ 
+  int adj_exp   = 158;
+  int sign_mask = 0x80000000;
+  int is_signed = sign_mask & x;
+  int fraction  = 0; 
+  if (!x)              return 0;
+  if (x == sign_mask)  return 0xCF000000;
+
+  if (is_signed) {
+    x = ~x + 1;
+  }
+  while (!(sign_mask & x)) {
+    adj_exp--;
+    x = x << 1;
+  }
+  fraction = (x & ~sign_mask) >> 8;
+  if ((x & 0x80) && ((x & 0x7F) > 0 || fraction & 0x01)) {
+    fraction++;
+  }
+  return is_signed + (adj_exp << 23) + fraction;
 }
