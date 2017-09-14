@@ -138,6 +138,7 @@ NOTES:
  *   Max ops: 8
  *   Rating: 1
  */
+
 int evenBits(void) {
   return (0x55 << 24) | (0x55 << 16) | (0x55 << 8) | 0x55;
 }
@@ -148,6 +149,8 @@ int evenBits(void) {
  *   Max ops: 8
  *   Rating: 1
  */
+
+/* Using property ~(x & y) = ~x | y and the other way around */
 int bitNor(int x, int y) {
   return ~x & ~y;
 }
@@ -157,6 +160,8 @@ int bitNor(int x, int y) {
  *   Max ops: 4
  *   Rating: 1
  */
+
+/* Setting bit to 0 for positive and rest of bits to 1 for max value */
 int tmax(void) {
   return ~(0x80 << 24);
 }
@@ -170,9 +175,13 @@ int tmax(void) {
  *   Max ops: 5
  *   Rating: 2
  */
+
+/* Return needs to mirror value of y, when x has any bit set. Hence when x has a bit set
+ * y will be or'ed with bunch of 0s, thus returning y */
 int implication(int x, int y) {
   return !x | y;
 }
+
 /*
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
  *  Round toward zero
@@ -181,6 +190,12 @@ int implication(int x, int y) {
  *   Max ops: 15
  *   Rating: 2
  */
+
+/* >> is arithmetic division by 2 and << is multiplication by 2. To deal with negatives
+ * example x = -5, n = 1. Then simple x >> (0x01 << n), assuming 8 bit ints, will generate
+ * 11111101b instead of 11111110. This is because in negetive we're rounding to infinity in
+ * division. So by (0x01 << n) + ~0x00), we generate n trailing 1s, then add 1 to it to 
+ * generate n+1 carry. As a result, it adds 2^(n+1) to original number to make it round to 0 */
 int divpwr2(int x, int n) {
   return (x + ((x >> 31) & ((0x01 << n) + ~0x00))) >> n;
 }
@@ -191,6 +206,8 @@ int divpwr2(int x, int n) {
  *   Max ops: 6
  *   Rating: 2
  */
+
+/* Move MSB signed bit to LSB and & it with 0x01 to return true if MSB signed bit was set or not. */
 int isNegative(int x) {
   return (x >> 31) & 0x01;
 }
@@ -202,6 +219,10 @@ int isNegative(int x) {
  *   Max ops: 16
  *   Rating: 3
  */
+
+/* If x is true, then !x will make it 0x00000000, 2s compliment of which will also give 0. And'ing
+ * that with z will mute its content, while !!x will generate 0xFFFFFFFF, &'ing that off with y
+ * will generate y itself. Or'ing Zs muted content and Y, will generate y. */
 int conditional(int x, int y, int z) {
   int not_x = !x;
   return (((~not_x)+1) & z) | (((~!not_x)+1) & y);
@@ -214,6 +235,9 @@ int conditional(int x, int y, int z) {
  *   Max ops: 25
  *   Rating: 3
  */
+
+/* Generate trailing n 1s. Then ~'ing it will make them leading 1s. &'ing them with bits pushed out
+ * will restore them. */
 int rotateRight(int x, int n) {
   /* Can use 2^n - 1 for masking as well, but this manipulation seems more appropriate for a rotate fn*/
   int neg_n = ~n + 1;
@@ -228,6 +252,8 @@ int rotateRight(int x, int n) {
  *   Max ops: 10
  *   Rating: 4
  */
+
+/* Using conditional structure to return x when MSB signed bit is set and it's 2s complement otherwise */
 int absVal(int x) {
   int is_neg = (x >> 31);
   return (is_neg & (~x + 1)) | (~is_neg & x);
@@ -239,6 +265,8 @@ int absVal(int x) {
  *   Max ops: 12
  *   Rating: 4
  */
+
+/* Only 0, will have itself and its 2s compliments MSB set to 0. */
 int bang(int x) {
   return ((((x >> 31) & 0x01) | (((~x+1) >> 31) & 0x01)) ^ 0x01);
 }
@@ -254,6 +282,8 @@ int bang(int x) {
  *   Max ops: 10
  *   Rating: 2
  */
+
+/* Remove signed bit if uf below min positive float value */
 unsigned float_abs(unsigned uf) {
   unsigned abs_uf = uf & 0x7FFFFFFF;
   if (abs_uf >= 0x7F800001) return uf;
@@ -272,6 +302,10 @@ unsigned float_abs(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
+
+/* If x is greater than the highest value of exp, then round to max floating value
+ * If x allows normalized values then return normalized version
+ * If x does not allow normalized value then set appropriate fraction part */
 unsigned float_pwr2(int x) {
   if      (x > 127)                 return 0x7f800000;
   else if (x <= 127 && x > -127)    return (x + 0x7F) << 23;
@@ -287,6 +321,14 @@ unsigned float_pwr2(int x) {
  *   Max ops: 30
  *   Rating: 4
  */
+
+/* If 0x00000000, then return 0 in floating point representation which is 0 itself
+ * If -0 provided, then return as such
+ * If -ve number provided then do 2s complement to prep for positive fraction rule
+ * Then calculate the exp required, setting x to have a 1 near MSB (for the assumed 1
+ * for fraction part)
+ * Shift x accordingly to the 1st 23 bits as required for fraction part.
+ * Finally round appropriately for 1s being thrown away. */
 unsigned float_i2f(int x) {
   /* http://binary-system.base-conversion.ro used as reference for figuring corner cases */ 
   int adj_exp   = 158;

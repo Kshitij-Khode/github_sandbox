@@ -2,6 +2,7 @@
 	"font_size": 8,
 	"ignored_packages":
 	[
+		"0_package_control_loader",
 		"Vintage"
 	],
 	"rulers":
