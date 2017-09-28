@@ -10,16 +10,19 @@ gvim.open() { gvim "$1" &> /dev/null & }
 command.show() { grep -rn '/home/kshitij/repos/github_sandbox/settings_files/.settings_bash_aliases' -e "$1"; }
 tar.untar() { tar xvf $1 -C $2; }
 tar.comp() { tar cvf $1 $2; }
+sys.edit.hosts() { sudo "$1" /etc/hosts; }
+sys.edit.bash_aliases() { "$1" ~/repos/github_sandbox/settings_files/.settings_bash_aliases; }
+bash.cmd.show() { type "$1"; }
+scp.upload() { scp -r "$2" "$1":"$3"; }
 
 # Aliases
 alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
-alias bash.alias.edit='vi ~/repos/github_sandbox/settings_files/.settings_bash_aliases'
 alias cd.homesandbox='cd ~/home_sandbox/'
 alias cd.githubsandbox.cs='cd ~/repos/github_sandbox/study_resources/18600_fcs'
 alias cd.githubsandbox='cd ~/repos/github_sandbox/'
 alias cd.launcherentries='cd /usr/share/applications/'
-alias adb.restart='adb kill-server;sudo adb start-server;'
+alias adb.refresh='adb kill-server;sudo adb start-server;'
 alias g.s='git status'
 alias g.a='git add --all'
 alias git.stash.unstaged='git stash save --keep-index;'
