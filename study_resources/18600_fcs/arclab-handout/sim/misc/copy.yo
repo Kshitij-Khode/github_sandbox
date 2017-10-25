@@ -1,0 +1,50 @@
+                            | # Execution begins at address 0 
+0x000:                      | 	.pos 0
+0x000: 30f40002000000000000 | 	irmovq stack,%rsp  	# Set up stack pointer
+0x00a: 2045                 | 	rrmovq %rsp,%rbp       	# Set up base pointer
+0x00c: 804800000000000000   | 	call main		# Execute main program
+0x015: 00                   | 	halt			# Terminate program 
+                            | 
+                            | # Requested memory block
+0x018:                      | 	.align 8
+0x018: 0a00000000000000     | src:	.quad 0x00a
+0x020: b000000000000000     | 	.quad 0x0b0
+0x028: 000c000000000000     |  	.quad 0xc00
+0x030: 1101000000000000     | dest:	.quad 0x111
+0x038: 2202000000000000     | 	.quad 0x222
+0x040: 3303000000000000     | 	.quad 0x333
+                            | 
+0x048: 30f30300000000000000 | main:	irmovq $3,%rbx
+0x052: a03f                 |         pushq %rbx
+0x054: 30f33000000000000000 |         irmovq dest,%rbx
+0x05e: a03f                 |         pushq %rbx
+0x060: 30f31800000000000000 |         irmovq src,%rbx
+0x06a: a03f                 |         pushq %rbx
+0x06c: 807600000000000000   |         call copy_block
+0x075: 00                   |         halt
+                            | 
+                            | # long copy_block(long *src, long *dest, long len)
+0x076:                      | copy_block:
+0x076: a05f                 | 	pushq %rbp
+0x078: 2045                 | 	rrmovq %rsp,%rbp
+0x07a: 50351000000000000000 | 	mrmovq 16(%rbp),%rbx
+0x084: 50151800000000000000 |         mrmovq 24(%rbp),%rcx
+0x08e: 50252000000000000000 |         mrmovq 32(%rbp),%rdx
+0x098: 6222                 | check:	andq %rdx,%rdx
+0x09a: 74a800000000000000   | 	jne copy
+0x0a3: 2054                 | 	rrmovq %rbp,%rsp
+0x0a5: b05f                 |         popq %rbp
+0x0a7: 90                   |         ret
+0x0a8: 50630000000000000000 | copy:	mrmovq (%rbx),%rsi
+0x0b2: 40610000000000000000 | 	rmmovq %rsi,(%rcx)
+0x0bc: 6360                 | 	xorq %rsi,%rax
+0x0be: 30f70800000000000000 | 	irmovq $8,%rdi
+0x0c8: 6073                 | 	addq %rdi,%rbx
+0x0ca: 6071                 | 	addq %rdi,%rcx
+0x0cc: 30f7ffffffffffffffff | 	irmovq $-1,%rdi
+0x0d6: 6072                 | 	addq %rdi,%rdx
+0x0d8: 709800000000000000   | 	jmp check
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x200:                      | 	.pos 0x200
+0x200:                      | stack:

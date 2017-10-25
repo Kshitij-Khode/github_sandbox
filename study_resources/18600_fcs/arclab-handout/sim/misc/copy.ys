@@ -1,0 +1,50 @@
+# Name: Kshitij Khode
+# ID: kkhode
+# Execution begins at address 0 
+	.pos 0
+	irmovq stack,%rsp  	# Set up stack pointer
+	rrmovq %rsp,%rbp       	# Set up base pointer
+	call main		# Execute main program
+	halt			# Terminate program 
+
+# Requested memory block
+	.align 8
+src:	.quad 0x00a
+	.quad 0x0b0
+ 	.quad 0xc00
+dest:	.quad 0x111
+	.quad 0x222
+	.quad 0x333
+
+main:	irmovq $3,%rbx
+        pushq %rbx
+        irmovq dest,%rbx
+        pushq %rbx
+        irmovq src,%rbx
+        pushq %rbx
+        call copy_block
+        halt
+
+# long copy_block(long *src, long *dest, long len)
+copy_block:
+	pushq %rbp
+	rrmovq %rsp,%rbp
+	mrmovq 16(%rbp),%rbx
+        mrmovq 24(%rbp),%rcx
+        mrmovq 32(%rbp),%rdx
+check:	andq %rdx,%rdx
+	jne copy
+	rrmovq %rbp,%rsp
+        popq %rbp
+        ret
+copy:	mrmovq (%rbx),%rsi
+	rmmovq %rsi,(%rcx)
+	xorq %rsi,%rax
+	iaddq $8,%rbx
+	iaddq $8,%rcx
+	iaddq $-1,%rdx
+	jmp check
+
+# Stack starts here and grows to lower addresses
+	.pos 0x200
+stack:

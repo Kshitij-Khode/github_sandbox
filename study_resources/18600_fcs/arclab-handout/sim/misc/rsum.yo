@@ -1,0 +1,43 @@
+                            | # Execution begins at address 0 
+0x000:                      | 	.pos 0
+0x000: 30f40002000000000000 | 	irmovq stack,%rsp  	# Set up stack pointer
+0x00a: 2045                 | 	rrmovq %rsp,%rbp       	# Set up base pointer
+0x00c: 804800000000000000   | 	call main		# Execute main program
+0x015: 00                   | 	halt			# Terminate program 
+                            | 
+                            | # Requested LinkedList
+0x018:                      | 	.align 8
+0x018: 0a00000000000000     | ele1:	.quad 0x00a
+0x020: 2800000000000000     | 	.quad ele2
+0x028: b000000000000000     | ele2:   .quad 0x0b0
+0x030: 3800000000000000     | 	.quad ele3
+0x038: 000c000000000000     | ele3:	.quad 0xc00
+0x040: 0000000000000000     | 	.quad 0
+                            | 
+0x048: 30f11800000000000000 | main:	irmovq ele1,%rcx
+0x052: a01f                 | 	pushq %rcx
+0x054: 805e00000000000000   | 	call rsum_list
+0x05d: 90                   | 	ret
+                            | 
+                            | # long rsum_list(list_ptr ls)
+0x05e:                      | rsum_list:
+0x05e: a05f                 | 	pushq %rbp
+0x060: 2045                 | 	rrmovq %rsp,%rbp
+0x062: a03f                 | 	pushq %rbx
+0x064: 50151000000000000000 | 	mrmovq 16(%rbp),%rcx
+0x06e: 6211                 | 	andq %rcx,%rcx
+0x070: 739c00000000000000   | 	je exit
+0x079: 50310000000000000000 | 	mrmovq (%rcx),%rbx
+0x083: 50110800000000000000 |         mrmovq 8(%rcx),%rcx
+0x08d: a01f                 | 	pushq %rcx
+0x08f: 805e00000000000000   | 	call rsum_list
+0x098: 6030                 | 	addq %rbx,%rax
+0x09a: b01f                 | 	popq %rcx
+0x09c: b03f                 | exit:	popq %rbx
+0x09e: 2054                 | 	rrmovq %rbp,%rsp
+0x0a0: b05f                 |         popq %rbp
+0x0a2: 90                   |         ret
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x200:                      | 	.pos 0x200
+0x200:                      | stack:

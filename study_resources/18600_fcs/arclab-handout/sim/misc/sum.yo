@@ -1,0 +1,39 @@
+                            | # Execution begins at address 0 
+0x000:                      | 	.pos 0
+0x000: 30f40002000000000000 | 	irmovq stack,%rsp  	# Set up stack pointer
+0x00a: 2045                 | 	rrmovq %rsp,%rbp       	# Set up base pointer
+0x00c: 804800000000000000   | 	call main		# Execute main program
+0x015: 00                   | 	halt			# Terminate program 
+                            | 
+                            | # Requested LinkedList
+0x018:                      | 	.align 8
+0x018: 0a00000000000000     | ele1:	.quad 0x00a
+0x020: 2800000000000000     | 	.quad ele2
+0x028: b000000000000000     | ele2:   .quad 0x0b0
+0x030: 3800000000000000     | 	.quad ele3
+0x038: 000c000000000000     | ele3:	.quad 0xc00
+0x040: 0000000000000000     | 	.quad 0
+                            | 
+0x048: 30f31800000000000000 | main:	irmovq ele1,%rbx
+0x052: a03f                 | 	pushq %rbx
+0x054: 805e00000000000000   | 	call sum_list
+0x05d: 90                   | 	ret
+                            | 
+                            | # long sum_list(list_ptr ls)
+0x05e:                      | sum_list:
+0x05e: a05f                 | 	pushq %rbp
+0x060: 2045                 | 	rrmovq %rsp,%rbp
+0x062: 50351000000000000000 | 	mrmovq 16(%rbp),%rbx
+0x06c: 6233                 | check:	andq %rbx,%rbx
+0x06e: 747c00000000000000   | 	jne add
+0x077: 2054                 | 	rrmovq %rbp,%rsp
+0x079: b05f                 |         popq %rbp
+0x07b: 90                   |         ret
+0x07c: 50130000000000000000 | add:	mrmovq (%rbx),%rcx
+0x086: 6010                 | 	addq %rcx,%rax
+0x088: 50330800000000000000 | 	mrmovq 8(%rbx),%rbx
+0x092: 706c00000000000000   | 	jmp check
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x200:                      | 	.pos 0x200
+0x200:                      | stack:

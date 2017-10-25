@@ -1,0 +1,95 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if so, goto Done:
+	irmovq $-4,%r8
+	irmovq $1,%r11
+	irmovq $-1,%r12
+	irmovq $32,%r13
+	irmovq $3,%r14
+	addq %r8,%rdx
+	jl jtout
+
+loop1:	mrmovq (%rdi),%rbx
+	mrmovq 8(%rdi),%rcx
+	mrmovq 16(%rdi),%r9
+        mrmovq 24(%rdi),%r10
+	rmmovq %rbx,(%rsi)
+	andq %rbx,%rbx
+	jle lt0
+	addq %r11,%rax
+lt0:	rmmovq %rcx,8(%rsi)
+	andq %rcx,%rcx
+	jle lt1
+        addq %r11,%rax
+lt1:    rmmovq %r9,16(%rsi)
+        andq %r9,%r9
+        jle lt2
+        addq %r11,%rax
+lt2:	rmmovq %r10,24(%rsi)
+        andq %r10,%r10
+        jle iter
+        addq %r11,%rax
+
+iter:	addq %r13,%rdi
+	addq %r13,%rsi
+	addq %r8,%rdx
+	jge loop1
+
+jtout:	addq %rdx,%rdx
+	addq %rdx,%rdx
+	addq %rdx,%rdx
+	addq %rdx,%rdx
+	mrmovq jtend(%rdx),%rdx
+	pushq %rdx
+	ret
+
+jt0:	mrmovq 16(%rdi),%rbx
+	rmmovq %rbx,16(%rsi)
+	andq %rbx,%rbx
+	jle jt1
+        addq %r11,%rax
+
+jt1:    mrmovq 8(%rdi),%rcx
+        rmmovq %rcx,8(%rsi)
+        andq %rcx,%rcx
+        jle jt2
+        addq %r11,%rax
+
+jt2:    mrmovq (%rdi),%r9
+        rmmovq %r9,16(%rsi)
+        andq %r9,%r9
+        jle Done
+        addq %r11,%rax
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+        .align 8
+jt:     .quad jt0
+        .quad jt1
+jtend:  .quad jt2
+
+End:
+#/* $end ncopy-ys */

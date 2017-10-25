@@ -1,0 +1,41 @@
+# Name: Kshitij Khode
+# ID: kkhode
+# Execution begins at address 0 
+	.pos 0
+	irmovq stack,%rsp  	# Set up stack pointer
+	rrmovq %rsp,%rbp       	# Set up base pointer
+	call main		# Execute main program
+	halt			# Terminate program 
+
+# Requested LinkedList
+	.align 8
+ele1:	.quad 0x00a
+	.quad ele2
+ele2:   .quad 0x0b0
+	.quad ele3
+ele3:	.quad 0xc00
+	.quad 0
+
+main:	irmovq ele1,%rbx
+	pushq %rbx
+	call sum_list
+	ret
+
+# long sum_list(list_ptr ls)
+sum_list:
+	pushq %rbp
+	rrmovq %rsp,%rbp
+	mrmovq 16(%rbp),%rbx
+check:	andq %rbx,%rbx
+	jne add
+	rrmovq %rbp,%rsp
+        popq %rbp
+        ret
+add:	mrmovq (%rbx),%rcx
+	addq %rcx,%rax
+	mrmovq 8(%rbx),%rbx
+	jmp check
+
+# Stack starts here and grows to lower addresses
+	.pos 0x200
+stack:

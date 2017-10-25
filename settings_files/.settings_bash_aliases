@@ -5,9 +5,9 @@ git.checkout.topath() { git show "$1":"$2" > "$3"; }
 git.init() { git init --bare "$1"; }
 mount.basic() { sudo mount -o "$1",remount "$2"; }
 net.routes() { sudo ping -b "$1" -c 3 -w 3; arp -a; }
-find.path.name() { sudo find "$1" -name "$2"; }
+find.dirs() { sudo find "$1" -name "$2"; }
 gvim.open() { gvim "$1" &> /dev/null & }
-command.show() { grep -rn '/home/kshitij/repos/github_sandbox/settings_files/.settings_bash_aliases' -e "$1"; }
+grep.dirs() { grep -rn "$1" -e "$2"; }
 tar.untar() { tar xvf $1 -C $2; }
 tar.comp() { tar cvf $1 $2; }
 sys.edit.hosts() { sudo "$1" /etc/hosts; }
@@ -20,8 +20,9 @@ alias ldir='du -sh *'
 alias bash.refresh='. ~/.bashrc'
 alias cd.homesandbox='cd ~/home_sandbox/'
 alias cd.githubsandbox.cs='cd ~/repos/github_sandbox/study_resources/18600_fcs'
-alias cd.githubsandbox='cd ~/repos/github_sandbox/'
-alias cd.launcherentries='cd /usr/share/applications/'
+alias cd.githubsandbox.root='cd ~/repos/github_sandbox/'
+alias cd.cmubiometrics.root='cd ~/repos/cmubiometrics_sandbox/'
+alias cd.cmu11777project.root='cd ~/repos/CMU11777Project/'
 alias adb.refresh='adb kill-server;sudo adb start-server;'
 alias g.s='git status'
 alias g.a='git add --all'
@@ -33,16 +34,16 @@ alias a.d='adb devices'
 alias ssh.genkey='ssh-keygen -b 4096 -t rsa'
 alias cat.hosts='cat /etc/hosts'
 alias net.routes.default='sudo ping -b 192.168.1.255 -c 3 -w 3; arp -a;'
-alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
-alias desktop.launcher.add='vi /usr/share/app-install/desktop/template.desktop'
 alias bluetooth.commandline='bluetoothctl' # --help
-alias git.smartgit='sh /usr/share/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
+alias git.smartgit='sh /home/kshitij/host_storage/home_sandbox/installed_programs/smartgit/bin/smartgit.sh --open `pwd` &> /dev/null &'
+alias androidstudio.start='sh /home/kshitij/home_storage/installed_programs/android-studio/bin/studio.sh &> /dev/null &'
 alias gvim.start='gvim &> /dev/null &'
+alias guidir='xdg-open . &> /dev/null &'
 
 # Examples
 alias example.suppress_output='echo "sample output" &> /dev/null'
 alias example.command_parameter='echo "trying to echo from current directory -- `pwd`"'
-alias example.desktop.launcher='cat /usr/share/app-install/desktop/gip\:gip.desktop'
+alias example.desktop.launcher='cat /usr/share/applications/terminator.desktop'
 
 # # Bash Modifications
 force_color_prompt=yes
@@ -63,3 +64,4 @@ unset color_prompt force_color_prompt
 # Disabled Items
 # alias googledrive.pull.studentresources='drive-google pull ~/google_drive/Study\ Resources/'
 # ln -s ~/repos/github_sandbox/settings_files/sublime_text_3/Preferences.sublime-settings ~/.config/sublime-text-3/Packages/User/Preferences.sublime-settings
+# alias mint.cinnamon.edit='~/.themes/kshitij_theme/cinnamon/cinnamon.css'
