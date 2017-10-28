@@ -46,9 +46,9 @@
 /* Global variables */
 extern char **environ;      /* defined in libc */
 char prompt[] = "tsh> ";    /* command line prompt (DO NOT CHANGE) */
-int verbose = 0;            /* if true, print additional output */
-int nextjid = 1;            /* next job ID to allocate */
-char sbuf[MAXLINE_TSH];         /* for composing sprintf messages */
+int verbose   = 0;          /* if true, print additional output */
+int nextjid   = 1;          /* next job ID to allocate */
+char sbuf[MAXLINE_TSH];     /* for composing sprintf messages */
 
 struct job_t {              /* The job struct */
     pid_t pid;              /* job PID */
@@ -76,6 +76,10 @@ struct cmdline_tokens {
 /* Function prototypes */
 void eval(char *cmdline);
 
+/* Custom major functions */
+int exec_builtin_command(struct cmdline_tokens tok);
+
+/* Custom signal handlers */
 void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
@@ -188,8 +192,9 @@ main(int argc, char **argv)
 void
 eval(char *cmdline)
 {
-    int bg;              /* should the job run in bg or fg? */
+    int bg, pid;              /* should the job run in bg or fg? */
     struct cmdline_tokens tok;
+    sigset_t mask_0;
 
     /* Parse command line */
     bg = parseline(cmdline, &tok);
@@ -199,7 +204,105 @@ eval(char *cmdline)
     if (tok.argv[0] == NULL) /* ignore empty lines */
         return;
 
+    if (!exec_builtin_command(tok)) {
+        Sigemptyset(&mask_0);
+        Sigaddset(&mask_0, SIGCHLD);
+        Sigaddset(&mask_0, SIGINT);
+        Sigaddset(&mask_0, SIGTSTP);
+        Sigprocmask(SIG_BLOCK, &mask_0, NULL);
+        if ((pid = fork()) == 0) {
+            Sigprocmask(SIG_UNBLOCK, &mask_0, NULL);
+            Setpgid(0, 0);
+            if (execve(tok.argv[0], tok.argv, environ) < 0) {
+                printf("%s: Command not found\n", tok.argv[0]);
+                exit(0);
+            }
+        }
+        addjob(job_list, pid, bg+1, cmdline);
+        Sigprocmask(SIG_UNBLOCK, &mask_0, NULL);
+
+        struct job_t *job = getjobpid(job_list, pid);
+        if (bg) {
+            printf("[%d] (%d) %s", job->jid, pid, cmdline);
+        }
+        else {
+            sigset_t mask_1, prev;
+            Sigaddset(&mask_1, SIGCHLD);
+            Sigprocmask(SIG_BLOCK, &mask_1, &prev);
+            while (fgpid(job_list) != 0 && getjobpid(job_list, pid)->state != ST) {
+                Sigemptyset(&mask_1);
+                Sigsuspend(&mask_1);
+            }
+            Sigprocmask(SIG_SETMASK, &prev, NULL);
+        }
+    }
     return;
+}
+
+int exec_builtin_command(struct cmdline_tokens tok)
+{
+    struct job_t *job;
+    int redirf_desc;
+    sigset_t mask, prev;
+
+    switch(tok.builtins) {
+        case BUILTIN_NONE: return 0;
+        case BUILTIN_QUIT: exit(0);
+        case BUILTIN_JOBS:
+            if (tok.outfile != NULL) {
+                redirf_desc = open(tok.outfile, O_RDWR);
+                listjobs(job_list, redirf_desc);
+                close(redirf_desc);
+            }
+            else listjobs(job_list, STDOUT_FILENO);
+            return 1;
+        case BUILTIN_BG:
+            if (tok.argv[tok.argc-1][0] == '%') {
+                job = getjobjid(job_list, atoi(tok.argv[tok.argc-1]+1));
+                if (job == NULL) {
+                    printf("%s: No such job\n", tok.argv[1]);
+                    return 1;
+                }
+            }
+            else {
+                job = getjobpid(job_list, atoi(tok.argv[tok.argc-1]));
+                if (job == NULL) {
+                   printf("(%s): No such process\n", tok.argv[1]);
+                   return 1;
+                }
+            }
+            Kill(job->pid, SIGCONT);
+            job->state = BG;
+            printf("[%d] (%d) %s\n", job->jid, job->pid, job->cmdline);
+            return 1;
+        case BUILTIN_FG:
+            if (tok.argv[tok.argc-1][0] == '%') {
+                job = getjobjid(job_list, atoi(tok.argv[tok.argc-1]+1));
+                if (job == NULL) {
+                    printf("%s: No such job\n", tok.argv[1]);
+                    return 1;
+                }
+            }
+            else {
+                job = getjobpid(job_list, atoi(tok.argv[tok.argc - 1]));
+                if (job == NULL) {
+                    printf("%s: No such process\n", tok.argv[1]);
+                    return 1;
+                }
+            }
+            Sigemptyset(&mask);
+            Sigaddset(&mask, SIGCHLD);
+            Sigprocmask(SIG_BLOCK, &mask, &prev);
+            while (fgpid(job_list) != 0 && getjobpid(job_list, job->pid)->state != ST) {
+                Sigsuspend(&mask);
+            }
+            Sigprocmask(SIG_SETMASK, &prev, NULL);
+            Kill(job->pid, SIGCONT);
+            job->state = FG;
+            return 1;
+        default: return 0;
+    }
+    return 0;
 }
 
 /*
@@ -365,6 +468,20 @@ parseline(const char *cmdline, struct cmdline_tokens *tok)
 void
 sigchld_handler(int sig)
 {
+    int status, pid;
+    while((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+        if (WIFSTOPPED(status)) {
+            getjobpid(job_list, pid)->state = ST;
+            printf("Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
+        }
+        else if (WIFSIGNALED(status)) {
+            deletejob(job_list, pid);
+            printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
+        }
+        else if (WIFEXITED(status)) {
+            deletejob(job_list, pid);
+        }
+    }
     return;
 }
 
@@ -376,6 +493,8 @@ sigchld_handler(int sig)
 void
 sigint_handler(int sig)
 {
+    pid_t pid = fgpid(job_list);
+    Kill(pid, sig);
     return;
 }
 
@@ -387,6 +506,8 @@ sigint_handler(int sig)
 void
 sigtstp_handler(int sig)
 {
+    pid_t pid = fgpid(job_list);
+    Kill(pid, sig);
     return;
 }
 
@@ -587,7 +708,6 @@ listjobs(struct job_t *job_list, int output_fd)
 /******************************
  * end job list helper routines
  ******************************/
-
 
 /***********************
  * Other helper routines
