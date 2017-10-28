@@ -1,7 +1,14 @@
 /*
  * tsh - A tiny shell program with job control
  *
- * <Put your name and login ID here>
+ * Name: Kshitij Khode
+ * Andrew ID: kkhode
+ * Note: Non-solution based online references were referred in order to grasp the
+ * structure of the lab
+ *
+ * This version of tiny shell supports bg/fg execution, signal handling and I/O
+ * redirection.
+ *
  */
 #include <assert.h>
 #include <stdio.h>
@@ -18,9 +25,9 @@
 
 /* Misc manifest constants */
 #define MAXLINE_TSH    1024   /* max line size */
-#define MAXARGS     128   /* max args on a command line */
-#define MAXJOBS      16   /* max jobs at any point in time */
-#define MAXJID    1<<16   /* max job ID */
+#define MAXARGS         128   /* max args on a command line */
+#define MAXJOBS         16    /* max jobs at any point in time */
+#define MAXJID          1<<16 /* max job ID */
 
 /* Job states */
 #define UNDEF         0   /* undefined */
@@ -44,11 +51,6 @@
 #define ST_OUTFILE  0x2   /* next token is the output file */
 
 /* Global variables */
-extern char **environ;      /* defined in libc */
-char prompt[] = "tsh> ";    /* command line prompt (DO NOT CHANGE) */
-int verbose   = 0;          /* if true, print additional output */
-int nextjid   = 1;          /* next job ID to allocate */
-char sbuf[MAXLINE_TSH];     /* for composing sprintf messages */
 
 struct job_t {              /* The job struct */
     pid_t pid;              /* job PID */
@@ -56,6 +58,7 @@ struct job_t {              /* The job struct */
     int state;              /* UNDEF, BG, FG, or ST */
     char cmdline[MAXLINE_TSH];  /* command line */
 };
+
 struct job_t job_list[MAXJOBS]; /* The job list */
 
 struct cmdline_tokens {
@@ -70,6 +73,12 @@ struct cmdline_tokens {
         BUILTIN_BG,
         BUILTIN_FG} builtins;
 };
+
+extern char **environ;      /* defined in libc */
+char prompt[] = "tsh> ";    /* command line prompt (DO NOT CHANGE) */
+int verbose   = 0;          /* if true, print additional output */
+int nextjid   = 1;          /* next job ID to allocate */
+char sbuf[MAXLINE_TSH];     /* for composing sprintf messages */
 
 /* End global variables */
 
@@ -188,11 +197,18 @@ main(int argc, char **argv)
  * each child process must have a unique process group ID so that our
  * background children don't receive SIGINT (SIGTSTP) from the kernel
  * when we type ctrl-c (ctrl-z) at the keyboard.
+ *
+ * The function attempts to execute commands if they're builtin commands
+ * such as jobs, fg etc. After that it preps up mask for signals dealing with
+ * termination of child processes i.e. shell commands. I/O redirection is
+ * achieved by having different child processes instantiated with i/o file
+ * buffers contained in the tok struct.
+ *
  */
 void
 eval(char *cmdline)
 {
-    int bg, pid;              /* should the job run in bg or fg? */
+    int bg, pid, redir_in, redir_out;   /* should the job run in bg or fg? */
     struct cmdline_tokens tok;
     sigset_t mask_0;
 
@@ -204,13 +220,47 @@ eval(char *cmdline)
     if (tok.argv[0] == NULL) /* ignore empty lines */
         return;
 
+    /* Attempt to execute arv parsed struct cmdline commands, if they are built in */
     if (!exec_builtin_command(tok)) {
+
+        /* Setup mask for various child processes i.e. commands in case they are
+        terminated through signal or naturally (ctrl-c or end), stopped (ctrl-z).
+        Block signal until child processes are created to avoid race */
         Sigemptyset(&mask_0);
         Sigaddset(&mask_0, SIGCHLD);
         Sigaddset(&mask_0, SIGINT);
         Sigaddset(&mask_0, SIGTSTP);
         Sigprocmask(SIG_BLOCK, &mask_0, NULL);
+
+        /* Fork child and run setup struct cmdline buffers, if < or > detected in commands
+        for I/O redirection. Can't simply use posix defined open() functions for I/O, since
+        later traces redirect to /dev/null and utilize < and > together, and simultaneously
+        utilize struct cmdline  requiring error checking and utilization of c defined
+        fopen() */
         if ((pid = fork()) == 0) {
+            FILE *infile = NULL;
+            FILE *outfile = NULL;
+            if (tok.infile != NULL) {
+                if ((redir_in = open(tok.infile, O_RDWR)) < 0) {
+                    infile = fopen(tok.infile, "r");
+                    redir_in = open(tok.infile, O_RDWR);
+                }
+                Dup2(redir_in, STDIN_FILENO);
+                if (infile != NULL) fclose(infile);
+                close(redir_in);
+            }
+            if (tok.outfile != NULL) {
+                if ((redir_out = open(tok.outfile, O_RDWR)) < 0) {
+                    outfile = fopen(tok.outfile, "w");
+                    redir_out = open(tok.outfile, O_RDWR);
+                }
+                Dup2(redir_out, STDOUT_FILENO);
+                if (outfile != NULL) fclose(outfile);
+                close(redir_out);
+            }
+
+            /* Group piped or redirected child process command, so that they can be terminated
+            together if required, and execute non builtin command */
             Sigprocmask(SIG_UNBLOCK, &mask_0, NULL);
             Setpgid(0, 0);
             if (execve(tok.argv[0], tok.argv, environ) < 0) {
@@ -218,9 +268,15 @@ eval(char *cmdline)
                 exit(0);
             }
         }
+
+        /* If non builtin command then fg and bg utilization possible. Add to job list as a
+        result. Allow unblocking to handle signals in child processes. */
         addjob(job_list, pid, bg+1, cmdline);
         Sigprocmask(SIG_UNBLOCK, &mask_0, NULL);
 
+        /* Imitate tshref when bg'ing a job. If fg, use Sigsuspend to block parent until child
+        returns. Save signals address'ls from the time command executed and restore, when
+        finished. */
         struct job_t *job = getjobpid(job_list, pid);
         if (bg) {
             printf("[%d] (%d) %s", job->jid, pid, cmdline);
@@ -239,23 +295,54 @@ eval(char *cmdline)
     return;
 }
 
+/*
+ * exec_builtin_command - Execute commands if they're builtin commands
+ *
+ * Checks if builtin commands, based on helper function parseline generated
+ * struct cmdline from arv contents. Builtin commands are bg, fg, quit and jobs.
+ *
+ * Parameters:
+ *     tok: cmdline struct parsed from parseline, contains info about if command
+ *     provided is builtin and if > or < provided for I/O redirection. Contains buf
+ *     if < or > provided.
+ *
+ *  Returns:
+ *     0, if command is not builtin command.
+ *     1, if command is builtin and execution completed successfully.
+ *    -1, if command is erroneously parsed as builtin or execution completed
+ *        unsucessfully.
+ *
+ * Note: Only jobs command is tested for I/O redirection in last traces, so only added
+ * I/O redirection there. I had tried I/O redirection simply exec_builtin_commands
+ * but ran into segmentation fault. Due to lack of time, restricted the implementation
+ * to bare minimum.
+ *
+ */
+
 int exec_builtin_command(struct cmdline_tokens tok)
 {
     struct job_t *job;
-    int redirf_desc;
     sigset_t mask, prev;
 
     switch(tok.builtins) {
+        /* Command is not builtin. so return to eval and allow child process for external
+        commands. */
         case BUILTIN_NONE: return 0;
         case BUILTIN_QUIT: exit(0);
+
+        /* Allow I/O redirection for jobs, since it is requested in last few traces, else
+        simply dump to stdout. */
         case BUILTIN_JOBS:
             if (tok.outfile != NULL) {
-                redirf_desc = open(tok.outfile, O_RDWR);
-                listjobs(job_list, redirf_desc);
-                close(redirf_desc);
+                int redir_out = open(tok.outfile, O_RDWR);
+                listjobs(job_list, redir_out);
+                close(redir_out);
             }
             else listjobs(job_list, STDOUT_FILENO);
             return 1;
+
+        /* if bg 1% kind of command, then bg using job id, else use pid. Restart child process
+        sending cigcont and set job state to BG. */
         case BUILTIN_BG:
             if (tok.argv[tok.argc-1][0] == '%') {
                 job = getjobjid(job_list, atoi(tok.argv[tok.argc-1]+1));
@@ -275,6 +362,10 @@ int exec_builtin_command(struct cmdline_tokens tok)
             job->state = BG;
             printf("[%d] (%d) %s\n", job->jid, job->pid, job->cmdline);
             return 1;
+
+        /* Command "regex" handling same as bg, but pause parent process using Sigsuspend
+        until child returns. Save signals address'ls from the time command executed
+        and restore, when finished. */
         case BUILTIN_FG:
             if (tok.argv[tok.argc-1][0] == '%') {
                 job = getjobjid(job_list, atoi(tok.argv[tok.argc-1]+1));
@@ -300,9 +391,9 @@ int exec_builtin_command(struct cmdline_tokens tok)
             Kill(job->pid, SIGCONT);
             job->state = FG;
             return 1;
-        default: return 0;
+        default: return -1;
     }
-    return 0;
+    return -1;
 }
 
 /*
@@ -471,13 +562,13 @@ sigchld_handler(int sig)
     int status, pid;
     while((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
         if (WIFSTOPPED(status)) {
-            getjobpid(job_list, pid)->state = ST;
             printf("Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
+            getjobpid(job_list, pid)->state = ST;
         }
         else if (WIFSIGNALED(status)) {
-            deletejob(job_list, pid);
             printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
-        }
+            deletejob(job_list, pid);
+            }
         else if (WIFEXITED(status)) {
             deletejob(job_list, pid);
         }
@@ -494,7 +585,9 @@ void
 sigint_handler(int sig)
 {
     pid_t pid = fgpid(job_list);
-    Kill(pid, sig);
+    if (pid != 0) {
+       Kill(-pid, sig);
+    }
     return;
 }
 
@@ -507,7 +600,9 @@ void
 sigtstp_handler(int sig)
 {
     pid_t pid = fgpid(job_list);
-    Kill(pid, sig);
+    if (pid != 0) {
+        Kill(-pid, sig);
+    }
     return;
 }
 
