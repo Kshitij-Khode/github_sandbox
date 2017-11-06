@@ -1,0 +1,143 @@
+; ModuleID = 'trans.c'
+target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
+target triple = "x86_64-redhat-linux-gnu"
+
+@transpose_submit_desc = global [21 x i8] c"Transpose submission\00", align 16
+@trans_desc = global [31 x i8] c"Simple row-wise scan transpose\00", align 16
+
+; Function Attrs: nounwind readnone uwtable
+define void @transpose_submit(i32 %M, i32 %N, i32* nocapture %A, i32* nocapture %B) #0 {
+  ret void
+}
+
+; Function Attrs: nounwind uwtable
+define void @trans(i32 %M, i32 %N, i32* nocapture readonly %A, i32* nocapture %B) #1 {
+  %1 = zext i32 %M to i64
+  %2 = zext i32 %N to i64
+  %3 = icmp sgt i32 %N, 0
+  %4 = icmp sgt i32 %M, 0
+  %or.cond = and i1 %3, %4
+  br i1 %or.cond, label %.lr.ph.us, label %._crit_edge4
+
+; <label>:5                                       ; preds = %6
+  %indvars.iv.next6 = add nuw nsw i64 %indvars.iv5, 1
+  %lftr.wideiv7 = trunc i64 %indvars.iv.next6 to i32
+  %exitcond8 = icmp eq i32 %lftr.wideiv7, %N
+  br i1 %exitcond8, label %._crit_edge4, label %.lr.ph.us
+
+; <label>:6                                       ; preds = %6, %.lr.ph.us
+  %indvars.iv = phi i64 [ 0, %.lr.ph.us ], [ %indvars.iv.next, %6 ]
+  %.sum.us = add i64 %indvars.iv, %11
+  %7 = getelementptr inbounds i32* %A, i64 %.sum.us
+  %8 = load i32* %7, align 4, !tbaa !1
+  %9 = mul nsw i64 %indvars.iv, %2
+  %.sum1.us = add i64 %9, %indvars.iv5
+  %10 = getelementptr inbounds i32* %B, i64 %.sum1.us
+  store i32 %8, i32* %10, align 4, !tbaa !1
+  %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
+  %lftr.wideiv = trunc i64 %indvars.iv.next to i32
+  %exitcond = icmp eq i32 %lftr.wideiv, %M
+  br i1 %exitcond, label %5, label %6
+
+.lr.ph.us:                                        ; preds = %0, %5
+  %indvars.iv5 = phi i64 [ %indvars.iv.next6, %5 ], [ 0, %0 ]
+  %11 = mul nsw i64 %indvars.iv5, %1
+  br label %6
+
+._crit_edge4:                                     ; preds = %5, %0
+  ret void
+}
+
+; Function Attrs: nounwind uwtable
+define void @registerFunctions() #1 {
+  tail call void @registerTransFunction(void (i32, i32, i32*, i32*)* @transpose_submit, i8* getelementptr inbounds ([21 x i8]* @transpose_submit_desc, i64 0, i64 0)) #4
+  tail call void @registerTransFunction(void (i32, i32, i32*, i32*)* @trans, i8* getelementptr inbounds ([31 x i8]* @trans_desc, i64 0, i64 0)) #4
+  ret void
+}
+
+declare void @registerTransFunction(void (i32, i32, i32*, i32*)*, i8*) #2
+
+; Function Attrs: nounwind readonly uwtable
+define i32 @is_transpose(i32 %M, i32 %N, i32* nocapture readonly %A, i32* nocapture readonly %B) #3 {
+  %1 = zext i32 %M to i64
+  %2 = zext i32 %N to i64
+  %3 = icmp sgt i32 %N, 0
+  br i1 %3, label %.preheader.lr.ph, label %.loopexit
+
+.preheader.lr.ph:                                 ; preds = %0
+  %4 = icmp sgt i32 %M, 0
+  br i1 %4, label %.lr.ph.us, label %.preheader
+
+.preheader:                                       ; preds = %.preheader.lr.ph
+  %n.vec = and i32 %N, -32
+  %cmp.zero = icmp eq i32 %n.vec, 0
+  br i1 %cmp.zero, label %middle.block, label %vector.body
+
+vector.body:                                      ; preds = %.preheader, %vector.body
+  %index = phi i32 [ %index.next, %vector.body ], [ 0, %.preheader ]
+  %index.next = add i32 %index, 32
+  %5 = icmp eq i32 %index.next, %n.vec
+  br i1 %5, label %middle.block, label %vector.body, !llvm.loop !5
+
+middle.block:                                     ; preds = %vector.body, %.preheader
+  %resume.val = phi i32 [ 0, %.preheader ], [ %n.vec, %vector.body ]
+  %cmp.n = icmp eq i32 %resume.val, %N
+  br i1 %cmp.n, label %.loopexit, label %scalar.ph
+
+; <label>:6                                       ; preds = %12
+  %7 = trunc i64 %indvars.iv.next to i32
+  %8 = icmp slt i32 %7, %M
+  br i1 %8, label %12, label %9
+
+; <label>:9                                       ; preds = %6
+  %indvars.iv.next7 = add nuw nsw i64 %indvars.iv6, 1
+  %10 = trunc i64 %indvars.iv.next7 to i32
+  %11 = icmp slt i32 %10, %N
+  br i1 %11, label %.lr.ph.us, label %.loopexit
+
+; <label>:12                                      ; preds = %.lr.ph.us, %6
+  %indvars.iv = phi i64 [ 0, %.lr.ph.us ], [ %indvars.iv.next, %6 ]
+  %.sum.us = add i64 %indvars.iv, %19
+  %13 = getelementptr inbounds i32* %A, i64 %.sum.us
+  %14 = load i32* %13, align 4, !tbaa !1
+  %15 = mul nsw i64 %indvars.iv, %2
+  %.sum1.us = add i64 %15, %indvars.iv6
+  %16 = getelementptr inbounds i32* %B, i64 %.sum1.us
+  %17 = load i32* %16, align 4, !tbaa !1
+  %18 = icmp eq i32 %14, %17
+  %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
+  br i1 %18, label %6, label %.loopexit
+
+.lr.ph.us:                                        ; preds = %.preheader.lr.ph, %9
+  %indvars.iv6 = phi i64 [ %indvars.iv.next7, %9 ], [ 0, %.preheader.lr.ph ]
+  %19 = mul nsw i64 %indvars.iv6, %1
+  br label %12
+
+scalar.ph:                                        ; preds = %middle.block, %scalar.ph
+  %i.04 = phi i32 [ %20, %scalar.ph ], [ %resume.val, %middle.block ]
+  %20 = add nsw i32 %i.04, 1
+  %21 = icmp slt i32 %20, %N
+  br i1 %21, label %scalar.ph, label %.loopexit, !llvm.loop !8
+
+.loopexit:                                        ; preds = %scalar.ph, %middle.block, %9, %12, %0
+  %.0 = phi i32 [ 1, %0 ], [ 0, %12 ], [ 1, %9 ], [ 1, %middle.block ], [ 1, %scalar.ph ]
+  ret i32 %.0
+}
+
+attributes #0 = { nounwind readnone uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind readonly uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { nounwind }
+
+!llvm.ident = !{!0}
+
+!0 = metadata !{metadata !"clang version 3.4.2 (tags/RELEASE_34/dot2-final)"}
+!1 = metadata !{metadata !2, metadata !2, i64 0}
+!2 = metadata !{metadata !"int", metadata !3, i64 0}
+!3 = metadata !{metadata !"omnipotent char", metadata !4, i64 0}
+!4 = metadata !{metadata !"Simple C/C++ TBAA"}
+!5 = metadata !{metadata !5, metadata !6, metadata !7}
+!6 = metadata !{metadata !"llvm.vectorizer.width", i32 1}
+!7 = metadata !{metadata !"llvm.vectorizer.unroll", i32 1}
+!8 = metadata !{metadata !8, metadata !6, metadata !7}
