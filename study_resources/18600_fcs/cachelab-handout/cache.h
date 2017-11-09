@@ -92,7 +92,7 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * Request an address from the cache. This can have side-effects that help
  * maintain the state of each line for coherency and replacement policies.
  */
-cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op);
+cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
 
 /**
  * cache_bus
