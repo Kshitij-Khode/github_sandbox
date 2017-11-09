@@ -50,12 +50,14 @@ typedef struct cache_line {
 
 typedef struct cache {
   /* required */
+  uint32_t block_bits;
   uint32_t set_bits;
   uint32_t associativity;
-  uint32_t block_bits;
+
   /* computed */
-  int set_count;
+  int line_count;
   mem_addr_t set_mask;
+  mem_addr_t tag_mask;
   cache_line_t** sets;
 } cache_t;
 
@@ -64,8 +66,7 @@ typedef struct cache {
  *
  * Initialize cache struct.
  */
-void cacheInit(
-  cache_t* cache,
+cache_t* cacheInit(
   uint32_t set_bits,
   uint32_t associativity,
   uint32_t block_bits);
@@ -83,7 +84,7 @@ void cacheDestroy(cache_t* cache);
  * Request an address from the cache. This can have side-effects that help
  * maintain the state of each line for coherency and replacement policies.
  */
-cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op);
+cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
 
 /**
  * cache_access
