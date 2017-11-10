@@ -38,7 +38,7 @@ sim_results_t runSimulator(cache_config_t* config) {
                     case OP_READ: printf("L "); break;
                     case OP_WRITE: printf("S "); break;
                 }
-                printf("%llx, %d\t\n", trace_entries[core]->addr, trace_entries[core]->size);
+                printf("%llx, %d\t", trace_entries[core]->addr, trace_entries[core]->size);
             }
             switch(msimCacheAccess(caches[core],
                    trace_entries[core]->addr,
@@ -55,6 +55,16 @@ sim_results_t runSimulator(cache_config_t* config) {
                     results.cores[core].misses++;
                     results.cores[core].evictions++;
                     break;
+            }
+            int rest_core;
+            for (rest_core = 0; rest_core < config->num_cores; rest_core++) {
+                if (rest_core != core && cacheBus(caches[rest_core],
+                                                  trace_entries[core]->addr,
+                                                  trace_entries[core]->op,
+                                                  config->verbosity) == TRSN_I)
+                {
+                    results.cores[core].invalidations++;
+                }
             }
         }
     }

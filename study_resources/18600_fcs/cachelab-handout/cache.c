@@ -76,11 +76,69 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
 }
 
 cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity) {
-  cache_result_t result = CACHE_HIT;
-  return result;
+    mem_addr_t set_ind = (addr & cache->set_mask)>>cache->block_bits;
+    mem_addr_t tag = (addr & cache->tag_mask)>>(cache->set_bits+cache->block_bits);
+    mem_addr_t set_line;
+    for (set_line = 0; set_line < cache->associativity; set_line++) {
+        if (cache->sets[set_ind][set_line].tag == tag &&
+            cache->sets[set_ind][set_line].state != INVALID)
+        {
+            if (cache->sets[set_ind][set_line].state != MODIFIED && op == OP_WRITE) {
+                cache->sets[set_ind][set_line].state = MODIFIED;
+            }
+            cache->sets[set_ind][set_line].age = cache->line_count++;
+            if (verbosity) printf("hit\n");
+            return CACHE_HIT;
+        }
+    }
+    for (set_line = 0; set_line < cache->associativity; set_line++) {
+        if (cache->sets[set_ind][set_line].state == INVALID) {
+            if (op == OP_READ) {
+                cache->sets[set_ind][set_line].state = SHARED;
+            }
+            else {
+                cache->sets[set_ind][set_line].state = MODIFIED;
+            }
+            cache->sets[set_ind][set_line].tag = tag;
+            cache->sets[set_ind][set_line].age = cache->line_count++;
+            if (verbosity) printf("miss\n");
+            return CACHE_MISS;
+        }
+    }
+    cache_line_t* evicted_line = &cache->sets[set_ind][0];
+    for (set_line = 1; set_line < cache->associativity; set_line++) {
+        if (cache->sets[set_ind][set_line].age < evicted_line->age) {
+            evicted_line = &cache->sets[set_ind][set_line];
+        }
+    }
+    if (op == OP_READ) {
+        evicted_line->state = SHARED;
+    }
+    else {
+        evicted_line->state = MODIFIED;
+    }
+    evicted_line->tag = tag;
+    evicted_line->age = cache->line_count++;
+    if (verbosity) printf("miss eviction\n");
+    return CACHE_EVICT;
 }
 
-msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op) {
-  msi_trsn_t transition = TRSN_NONE;
-  return transition;
+msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op, int verbosity) {
+    mem_addr_t set_ind = (addr & cache->set_mask)>>cache->block_bits;
+    mem_addr_t tag = (addr & cache->tag_mask)>>(cache->set_bits+cache->block_bits);
+    mem_addr_t set_line;
+    for (set_line = 0; set_line < cache->associativity; set_line++) {
+        if (cache->sets[set_ind][set_line].tag == tag) {
+            if (op == OP_WRITE && cache->sets[set_ind][set_line].state != INVALID) {
+                cache->sets[set_ind][set_line].state = INVALID;
+                 if (verbosity) printf("invalidation\n");
+                return TRSN_I;
+            }
+            if (op == OP_READ && cache->sets[set_ind][set_line].state == MODIFIED) {
+                cache->sets[set_ind][set_line].state = SHARED;
+                return TRSN_S;
+            }
+        }
+    }
+    return TRSN_NONE;
 }

@@ -34,12 +34,8 @@ typedef enum {
 /** Enum for tracking MSI state transitions. */
 typedef enum {
   TRSN_NONE,
-  TRSN_M2I,
-  TRSN_M2S,
-  TRSN_S2I,
-  TRSN_S2M,
-  TRSN_I2M,
-  TRSN_I2S
+  TRSN_I,
+  TRSN_S
 } msi_trsn_t;
 
 typedef struct cache_line {
@@ -101,6 +97,6 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * This message is a R/W operation about a block.
  * @return The [[msi_trsn_t]] block transition resulting from the message.
  */
-msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op);
+msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
 
 #endif // CACHE_H
