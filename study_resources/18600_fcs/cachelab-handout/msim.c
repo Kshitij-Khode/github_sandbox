@@ -2,7 +2,9 @@
  * msim.c - A cache simulator that implements LRU and MSI protocol for
  *   cache coherency.
  *
- * You must implement this file.
+ * Name: Kshitij Khode
+ * Andrew ID: kkhode
+ *
  */
 #include <stdio.h>
 #include "cache.h"
@@ -11,6 +13,19 @@
 
 int nextTraces(trace_entry_t** trace_entries, cache_config_t* config);
 
+/*
+ * Inputs: Config for the type of run specified through command line args
+ * Outputs: No of misses, hits, evictions and invalidations
+ *
+ * Description:
+ * Does all the following steps for all the number of cores specified in args
+ * 1. Resets the counter for counting misses, hits, evictions and invalidations
+ * 2. Initializes the cache struct (including mallocing and initializing default values).
+ * 3. Attempts accessing cache for directives provided by a line provided in the trace file
+ *    and records the outcome in terms of hit, miss or eviction.
+ * 4. Allows rest of the cores to snoop and update their own state for tag matching lines
+ * 5. Frees malloc'd memory provided to cache struct
+ */
 sim_results_t runSimulator(cache_config_t* config) {
     sim_results_t results;
     trace_entry_t* trace_entries[config->num_cores];
@@ -74,6 +89,14 @@ sim_results_t runSimulator(cache_config_t* config) {
     return results;
 }
 
+/*
+ * Inputs: Config for the type of run specified through command line args & trace entry struct
+ *         used to figure out content of a single line provided in the trace.
+ * Outputs: If next line was successfully fetched for any trace pertaining to any core.
+ *
+ * Description: Gets next line content for trace pertaining to every core and returns true if
+ *              that action was successfull.
+ */
 int nextTraces(trace_entry_t** trace_entries, cache_config_t* config) {
     int core, rc = 0;
     for (core = 0; core < config->num_cores; core++) {

@@ -2,14 +2,26 @@
  * csim.c - A cache simulator that implements cache with LRU policy
  *   for replacement.
  *
- * Kshitij Khode
+ * Name: Kshitij Khode
  * Andrew ID: kkhode
+ *
  */
 #include <stdio.h>
 #include "cache.h"
 #include "csim.h"
 #include "trace-stream.h"
 
+/*
+ * Inputs: Config for the type of run specified through command line args
+ * Outputs: No of misses, hits and evictions
+ *
+ * Description:
+ * 1. Resets the counter for counting misses, hits and evictions
+ * 2. Initializes the cache struct (including mallocing and initializing default values).
+ * 3. Attempts accessing cache for directives provided by a line provided in the trace file
+ *    and records the outcome in terms of hit, miss or eviction.
+ * 4. Frees malloc'd memory provided to cache struct
+ */
 sim_result_t runSimulator(cache_config_t* config) {
     sim_result_t result = {0, 0, 0};
     trace_entry_t* trace_entry;
