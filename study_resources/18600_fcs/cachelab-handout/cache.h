@@ -34,8 +34,12 @@ typedef enum {
 /** Enum for tracking MSI state transitions. */
 typedef enum {
   TRSN_NONE,
-  TRSN_I,
-  TRSN_S
+  TRSN_M2I,
+  TRSN_M2S,
+  TRSN_S2I,
+  TRSN_S2M,
+  TRSN_I2M,
+  TRSN_I2S
 } msi_trsn_t;
 
 typedef struct cache_line {
@@ -46,14 +50,12 @@ typedef struct cache_line {
 
 typedef struct cache {
   /* required */
-  uint32_t block_bits;
   uint32_t set_bits;
   uint32_t associativity;
-
+  uint32_t block_bits;
   /* computed */
-  int line_count;
+  int set_count;
   mem_addr_t set_mask;
-  mem_addr_t tag_mask;
   cache_line_t** sets;
 } cache_t;
 
@@ -62,7 +64,8 @@ typedef struct cache {
  *
  * Initialize cache struct.
  */
-cache_t* cacheInit(
+void cacheInit(
+  cache_t* cache,
   uint32_t set_bits,
   uint32_t associativity,
   uint32_t block_bits);
@@ -80,7 +83,7 @@ void cacheDestroy(cache_t* cache);
  * Request an address from the cache. This can have side-effects that help
  * maintain the state of each line for coherency and replacement policies.
  */
-cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
+cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op);
 
 /**
  * cache_access
@@ -88,7 +91,7 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * Request an address from the cache. This can have side-effects that help
  * maintain the state of each line for coherency and replacement policies.
  */
-cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
+cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op);
 
 /**
  * cache_bus
@@ -97,6 +100,6 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * This message is a R/W operation about a block.
  * @return The [[msi_trsn_t]] block transition resulting from the message.
  */
-msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op, int verbosity);
+msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op);
 
 #endif // CACHE_H

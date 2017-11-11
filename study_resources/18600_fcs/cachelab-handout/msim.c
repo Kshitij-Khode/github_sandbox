@@ -29,16 +29,19 @@ int nextTraces(trace_entry_t** trace_entries, cache_config_t* config);
 sim_results_t runSimulator(cache_config_t* config) {
     sim_results_t results;
     trace_entry_t* trace_entries[config->num_cores];
-    cache_t* caches[config->num_cores];
+    cache_t caches[config->num_cores];
+    op_t op;
+
     int core;
     for (core = 0; core < config->num_cores; core++) {
         results.cores[core].hits = 0;
         results.cores[core].misses = 0;
         results.cores[core].evictions = 0;
         results.cores[core].invalidations = 0;
-        caches[core] = cacheInit(config->set_bits,
-                                config->associativity,
-                                config->block_bits);
+        cacheInit(&caches[core],
+                  config->set_bits,
+                  config->associativity,
+                  config->block_bits);
     }
 
     if (config->verbosity) {
@@ -47,18 +50,23 @@ sim_results_t runSimulator(cache_config_t* config) {
 
     while (nextTraces(trace_entries, config)) {
         for (core = 0; core < config->num_cores; core++) {
-            if (config->verbosity) {
+            if (1) {
                 printf("  C%d: ", core);
                 switch (trace_entries[core]->op) {
-                    case OP_READ: printf("L "); break;
-                    case OP_WRITE: printf("S "); break;
+                    case 'L':
+                        op = OP_READ;
+                        printf("L ");
+                        break;
+                    case 'S':
+                        op = OP_WRITE;
+                        printf("S ");
+                        break;
                 }
                 printf("%llx, %d\t", trace_entries[core]->addr, trace_entries[core]->size);
             }
-            switch(msimCacheAccess(caches[core],
+            switch(msimCacheAccess(&caches[core],
                    trace_entries[core]->addr,
-                   trace_entries[core]->op,
-                   config->verbosity))
+                   op))
             {
                 case CACHE_HIT:
                     results.cores[core].hits++;
@@ -73,10 +81,9 @@ sim_results_t runSimulator(cache_config_t* config) {
             }
             int rest_core;
             for (rest_core = 0; rest_core < config->num_cores; rest_core++) {
-                if (rest_core != core && cacheBus(caches[rest_core],
+                if (rest_core != core && cacheBus(&caches[rest_core],
                                                   trace_entries[core]->addr,
-                                                  trace_entries[core]->op,
-                                                  config->verbosity) == TRSN_I)
+                                                  op) == TRSN_S2I)
                 {
                     results.cores[core].invalidations++;
                 }
@@ -84,7 +91,7 @@ sim_results_t runSimulator(cache_config_t* config) {
         }
     }
     for (core = 0; core < config->num_cores; core++) {
-        cacheDestroy(caches[core]);
+        cacheDestroy(&caches[core]);
     }
     return results;
 }

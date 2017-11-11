@@ -2,7 +2,6 @@
  * trace-stream.h
  */
 #include <stdio.h>
-#include "cache.h"
 
 
 #ifndef TRACE_STREAM_H
@@ -11,7 +10,7 @@
 #define TRACE_LINE_LEN 1000
 
 typedef struct trace_entry {
-  op_t op;
+  char op;
   unsigned long long int addr;
   unsigned int size;
 } trace_entry_t;

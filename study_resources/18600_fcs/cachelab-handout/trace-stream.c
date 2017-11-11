@@ -33,14 +33,7 @@ trace_entry_t* traceStreamNext(trace_stream_t* ts) {
   char op = buf[1];
   if (op == 'S' || op == 'L' || op == 'M') {
     sscanf(buf + 3, "%llx,%u", &ts->next_entry.addr, &ts->next_entry.size);
-    switch (op) {
-      case 'S':
-        ts->next_entry.op = OP_WRITE;
-        break;
-      case 'L':
-        ts->next_entry.op = OP_READ;
-        break;
-    }
+    ts->next_entry.op = op;
     return &ts->next_entry;
   } else {
     // This will only happen if the trace has I operations or is malformed.

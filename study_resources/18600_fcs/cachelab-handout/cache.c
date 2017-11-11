@@ -8,6 +8,8 @@
 #include "cache.h"
 #include <stdio.h>
 
+int verbosity = 1;
+
 /*
  * Inputs: set_bits, associativity and block_bits parameters that define architecture of the
  *         cache.
@@ -18,17 +20,16 @@
  * 2. Calculates appropriate helper data based on input cache architecture params
  * 3. Allocates memory for all the lines pertaining to cache and initializes them
  */
-cache_t* cacheInit(
+void cacheInit(
+  cache_t* cache,
   uint32_t set_bits,
   uint32_t associativity,
   uint32_t block_bits) {
-    cache_t* cache = (cache_t*)malloc(sizeof(*cache));
     cache->block_bits = block_bits;
     cache->set_bits = set_bits;
     cache->associativity = associativity;
-    cache->line_count = 0;
+    cache->set_count = 0;
     cache->set_mask = ((1<<set_bits)-1)<<block_bits;
-    cache->tag_mask = ~((1<<(set_bits+block_bits))-1);
     cache->sets = (cache_line_t**)malloc(sizeof(cache_line_t*)*(1<<set_bits));
     mem_addr_t set_ind, set_line;
     for (set_ind = 0; set_ind < (1<<set_bits); set_ind++) {
@@ -39,7 +40,6 @@ cache_t* cacheInit(
             cache->sets[set_ind][set_line].age = -1;
         }
     }
-    return cache;
 }
 
 /*
@@ -51,7 +51,6 @@ void cacheDestroy(cache_t* cache) {
         free(cache->sets[set_ind]);
     }
     free(cache->sets);
-    free(cache);
 }
 
 /*
@@ -68,14 +67,16 @@ void cacheDestroy(cache_t* cache) {
  * 3. If tag not found and an unintialized line isn;t found, evict existing one based on
  *    LRU criteria.
  */
-cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity) {
+cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op) {
     mem_addr_t set_ind = (addr & cache->set_mask)>>cache->block_bits;
-    mem_addr_t tag = (addr & cache->tag_mask)>>(cache->set_bits+cache->block_bits);
+    mem_addr_t tag_mask = ~((1<<(cache->set_bits+cache->block_bits))-1);
+    mem_addr_t tag = (addr & tag_mask)>>(cache->set_bits+cache->block_bits);
+
     mem_addr_t set_line;
     for (set_line = 0; set_line < cache->associativity; set_line++) {
         if (cache->sets[set_ind][set_line].tag == tag) {
             cache->sets[set_ind][set_line].state = SHARED;
-            cache->sets[set_ind][set_line].age = cache->line_count++;
+            cache->sets[set_ind][set_line].age = cache->set_count++;
             if (verbosity) printf("hit\n");
             return CACHE_HIT;
         }
@@ -84,7 +85,7 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
         if (cache->sets[set_ind][set_line].state == INVALID) {
             cache->sets[set_ind][set_line].tag = tag;
             cache->sets[set_ind][set_line].state = SHARED;
-            cache->sets[set_ind][set_line].age = cache->line_count++;
+            cache->sets[set_ind][set_line].age = cache->set_count++;
             if (verbosity) printf("miss\n");
             return CACHE_MISS;
         }
@@ -97,7 +98,7 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
     }
     evicted_line->tag = tag;
     evicted_line->state = SHARED;
-    evicted_line->age = cache->line_count++;
+    evicted_line->age = cache->set_count++;
     if (verbosity) printf("miss eviction\n");
     return CACHE_EVICT;
 }
@@ -116,9 +117,10 @@ cache_result_t csimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * 3. If tag not found and an INVALID line is not found, evict existing one based on
  *    LRU criteria. If operation is load or store, update state appropriately. Return evict.
  */
-cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int verbosity) {
+cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op) {
     mem_addr_t set_ind = (addr & cache->set_mask)>>cache->block_bits;
-    mem_addr_t tag = (addr & cache->tag_mask)>>(cache->set_bits+cache->block_bits);
+    mem_addr_t tag_mask = ~((1<<(cache->set_bits+cache->block_bits))-1);
+    mem_addr_t tag = (addr & tag_mask)>>(cache->set_bits+cache->block_bits);
     mem_addr_t set_line;
     for (set_line = 0; set_line < cache->associativity; set_line++) {
         if (cache->sets[set_ind][set_line].tag == tag &&
@@ -127,7 +129,7 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
             if (cache->sets[set_ind][set_line].state != MODIFIED && op == OP_WRITE) {
                 cache->sets[set_ind][set_line].state = MODIFIED;
             }
-            cache->sets[set_ind][set_line].age = cache->line_count++;
+            cache->sets[set_ind][set_line].age = cache->set_count++;
             if (verbosity) printf("hit\n");
             return CACHE_HIT;
         }
@@ -141,7 +143,7 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
                 cache->sets[set_ind][set_line].state = MODIFIED;
             }
             cache->sets[set_ind][set_line].tag = tag;
-            cache->sets[set_ind][set_line].age = cache->line_count++;
+            cache->sets[set_ind][set_line].age = cache->set_count++;
             if (verbosity) printf("miss\n");
             return CACHE_MISS;
         }
@@ -159,12 +161,15 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
         evicted_line->state = MODIFIED;
     }
     evicted_line->tag = tag;
-    evicted_line->age = cache->line_count++;
+    evicted_line->age = cache->set_count++;
     if (verbosity) printf("miss eviction\n");
     return CACHE_EVICT;
 }
 
 /*
+ * NOTE: Since the assignment only cares for invalidations, no matter which transition
+ * caused, I'll be returning TRSN_S2I for any invalidation.
+ *
  * Inputs: pointer to the cache being accessed, memory address being accessed, the kind of
  *         operation being done i.e. load or store and the verbosity level of the function.
  * Outputs: If a state change occured (to invalid or shared) or not in the cache.
@@ -178,20 +183,22 @@ cache_result_t msimCacheAccess(cache_t* cache, mem_addr_t addr, op_t op, int ver
  * 3. Else simply return no transition change, since all the other transition changes
  *    are inconsequential for the assignment results.
  */
-msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op, int verbosity) {
+msi_trsn_t cacheBus(cache_t* cache, mem_addr_t addr, op_t op) {
     mem_addr_t set_ind = (addr & cache->set_mask)>>cache->block_bits;
-    mem_addr_t tag = (addr & cache->tag_mask)>>(cache->set_bits+cache->block_bits);
+    mem_addr_t tag_mask = ~((1<<(cache->set_bits+cache->block_bits))-1);
+    mem_addr_t tag = (addr & tag_mask)>>(cache->set_bits+cache->block_bits);
+
     mem_addr_t set_line;
     for (set_line = 0; set_line < cache->associativity; set_line++) {
         if (cache->sets[set_ind][set_line].tag == tag) {
             if (op == OP_WRITE && cache->sets[set_ind][set_line].state != INVALID) {
                 cache->sets[set_ind][set_line].state = INVALID;
                 /* if (verbosity) printf("invalidation\n"); */
-                return TRSN_I;
+                return TRSN_S2I;
             }
             if (op == OP_READ && cache->sets[set_ind][set_line].state == MODIFIED) {
                 cache->sets[set_ind][set_line].state = SHARED;
-                return TRSN_S;
+                return TRSN_M2S;
             }
         }
     }
