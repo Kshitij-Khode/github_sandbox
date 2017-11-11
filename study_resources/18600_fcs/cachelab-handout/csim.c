@@ -35,16 +35,23 @@ sim_result_t runSimulator(cache_config_t* config) {
     }
 
     while ((trace_entry = traceStreamNext(&config->trace))) {
-        if (1) {
+            /* Quickly add ugly statement to deal with reverting to default function proto */
             switch (trace_entry->op) {
                 case 'L':
                     op = OP_READ;
-                    printf("L ");
                     break;
                 case 'S':
                     op = OP_WRITE;
-                    printf("S ");
                     break;
+            }
+            if (config->verbosity) {
+                switch (trace_entry->op) {
+                    case 'L':
+                        printf("L ");
+                        break;
+                    case 'S':
+                        printf("S ");
+                        break;
             }
             printf("%llx,%d\t", trace_entry->addr, trace_entry->size);
         }

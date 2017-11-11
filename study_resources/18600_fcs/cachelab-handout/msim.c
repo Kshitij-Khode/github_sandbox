@@ -50,15 +50,22 @@ sim_results_t runSimulator(cache_config_t* config) {
 
     while (nextTraces(trace_entries, config)) {
         for (core = 0; core < config->num_cores; core++) {
-            if (1) {
+            /* Quickly add ugly statement to deal with reverting to default function proto */
+            switch (trace_entries[core]->op) {
+                case 'L':
+                    op = OP_READ;
+                    break;
+                case 'S':
+                    op = OP_WRITE;
+                    break;
+            }
+            if (config->verbosity) {
                 printf("  C%d: ", core);
                 switch (trace_entries[core]->op) {
                     case 'L':
-                        op = OP_READ;
                         printf("L ");
                         break;
                     case 'S':
-                        op = OP_WRITE;
                         printf("S ");
                         break;
                 }
