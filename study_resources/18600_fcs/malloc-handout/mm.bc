@@ -1,0 +1,2262 @@
+; ModuleID = 'mm.c'
+target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
+target triple = "x86_64-redhat-linux-gnu"
+
+%struct.block = type { i64, [0 x i8] }
+
+@.str = private unnamed_addr constant [9 x i8] c"mm_init\0A\00", align 1
+@heap_listp = internal global %struct.block* null, align 8
+@.str1 = private unnamed_addr constant [13 x i8] c"mm_checkheap\00", align 1
+@.str2 = private unnamed_addr constant [5 x i8] c"mm.c\00", align 1
+@__PRETTY_FUNCTION__.mm_malloc = private unnamed_addr constant [24 x i8] c"void *mm_malloc(size_t)\00", align 1
+@.str3 = private unnamed_addr constant [19 x i8] c"malloc size: %lu \0A\00", align 1
+@.str4 = private unnamed_addr constant [32 x i8] c"Malloc size %zd on address %p.\0A\00", align 1
+@.str5 = private unnamed_addr constant [10 x i8] c"free(%p)\0A\00", align 1
+@.str6 = private unnamed_addr constant [19 x i8] c"push_to_freel(%p)\0A\00", align 1
+@free_listp = internal global %struct.block* null, align 8
+@.str7 = private unnamed_addr constant [20 x i8] c"pop_from_freel(%p)\0A\00", align 1
+@.str8 = private unnamed_addr constant [15 x i8] c"mm_checkblock\0A\00", align 1
+@.str9 = private unnamed_addr constant [47 x i8] c"  kbk_debug::mm_cb::block(@%p) is not aligned\0A\00", align 1
+@.str10 = private unnamed_addr constant [44 x i8] c"  kbk_debug::mm_cb::block(@%p) not in heap\0A\00", align 1
+@.str11 = private unnamed_addr constant [63 x i8] c"  kbk_debug::mm_cb::block(@%p) header footer size don't match\0A\00", align 1
+@.str12 = private unnamed_addr constant [64 x i8] c"  kbk_debug::mm_cb::block(@%p) header footer alloc don't match\0A\00", align 1
+@.str13 = private unnamed_addr constant [61 x i8] c"  kbk_debug::mm_cb::free blocks(@%p & @%p) aren't coalesced\0A\00", align 1
+@.str14 = private unnamed_addr constant [37 x i8] c"  kbk_debug::mm_checkheap::line(%d)\0A\00", align 1
+@.str15 = private unnamed_addr constant [52 x i8] c"  kbk_debug::mm_ch::prologue footer(@%p) size != 0\0A\00", align 1
+@.str16 = private unnamed_addr constant [54 x i8] c"  kbk_debug::mm_ch::prologue footer(@%p) alloc unset\0A\00", align 1
+@.str17 = private unnamed_addr constant [52 x i8] c"  kbk_debug::mm_ch::epilogue header(@%p) size != 0\0A\00", align 1
+@.str18 = private unnamed_addr constant [54 x i8] c"  kbk_debug::mm_ch::epilogue header(@%p) alloc unset\0A\00", align 1
+@.str19 = private unnamed_addr constant [45 x i8] c"  kbk_debug::mm_cfl::(%p)->next not in heap\0A\00", align 1
+@.str20 = private unnamed_addr constant [45 x i8] c"  kbk_debug::mm_cfl::(%p)->prev not in heap\0A\00", align 1
+@.str21 = private unnamed_addr constant [66 x i8] c"  kbk_debug::mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\0A\00", align 1
+@.str22 = private unnamed_addr constant [51 x i8] c"  kbk_debug::mm_cfl::freelist(%d) != freeheap(%d)\0A\00", align 1
+@.str23 = private unnamed_addr constant [18 x i8] c"heapcheck sucess\0A\00", align 1
+@.str24 = private unnamed_addr constant [20 x i8] c"block != ((void*)0)\00", align 1
+@__PRETTY_FUNCTION__.find_next = private unnamed_addr constant [30 x i8] c"block_t *find_next(block_t *)\00", align 1
+@.str25 = private unnamed_addr constant [25 x i8] c"block_next != ((void*)0)\00", align 1
+@.str26 = private unnamed_addr constant [10 x i8] c"find_fit\0A\00", align 1
+@.str27 = private unnamed_addr constant [7 x i8] c"place\0A\00", align 1
+@.str28 = private unnamed_addr constant [14 x i8] c"coalesce(%p)\0A\00", align 1
+@.str29 = private unnamed_addr constant [7 x i8] c"coa 0\0A\00", align 1
+@.str30 = private unnamed_addr constant [7 x i8] c"coa 1\0A\00", align 1
+@.str31 = private unnamed_addr constant [7 x i8] c"coa 2\0A\00", align 1
+@.str32 = private unnamed_addr constant [7 x i8] c"coa 3\0A\00", align 1
+@.str33 = private unnamed_addr constant [13 x i8] c"extend_heap\0A\00", align 1
+
+; Function Attrs: nounwind uwtable
+define zeroext i1 @mm_init() #0 {
+  %1 = alloca i1, align 1
+  %start = alloca i64*, align 8
+  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i32 0, i32 0)), !dbg !120
+  call void @llvm.dbg.declare(metadata !{i64** %start}, metadata !121), !dbg !122
+  %3 = call i8* @mem_sbrk(i64 16), !dbg !122
+  %4 = bitcast i8* %3 to i64*, !dbg !122
+  store i64* %4, i64** %start, align 8, !dbg !122
+  %5 = load i64** %start, align 8, !dbg !123
+  %6 = icmp eq i64* %5, inttoptr (i64 -1 to i64*), !dbg !123
+  br i1 %6, label %7, label %8, !dbg !123
+
+; <label>:7                                       ; preds = %0
+  store i1 false, i1* %1, !dbg !125
+  br label %22, !dbg !125
+
+; <label>:8                                       ; preds = %0
+  %9 = call i64 @pack(i64 0, i1 zeroext true), !dbg !127
+  %10 = load i64** %start, align 8, !dbg !127
+  %11 = getelementptr inbounds i64* %10, i64 0, !dbg !127
+  store i64 %9, i64* %11, align 8, !dbg !127
+  %12 = call i64 @pack(i64 0, i1 zeroext true), !dbg !128
+  %13 = load i64** %start, align 8, !dbg !128
+  %14 = getelementptr inbounds i64* %13, i64 1, !dbg !128
+  store i64 %12, i64* %14, align 8, !dbg !128
+  %15 = load i64** %start, align 8, !dbg !129
+  %16 = getelementptr inbounds i64* %15, i64 1, !dbg !129
+  %17 = bitcast i64* %16 to %struct.block*, !dbg !129
+  store %struct.block* %17, %struct.block** @heap_listp, align 8, !dbg !129
+  %18 = call %struct.block* @extend_heap(i64 4096), !dbg !130
+  %19 = icmp eq %struct.block* %18, null, !dbg !130
+  br i1 %19, label %20, label %21, !dbg !130
+
+; <label>:20                                      ; preds = %8
+  store i1 false, i1* %1, !dbg !132
+  br label %22, !dbg !132
+
+; <label>:21                                      ; preds = %8
+  store i1 true, i1* %1, !dbg !134
+  br label %22, !dbg !134
+
+; <label>:22                                      ; preds = %21, %20, %7
+  %23 = load i1* %1, !dbg !135
+  ret i1 %23, !dbg !135
+}
+
+declare i32 @printf(i8*, ...) #1
+
+; Function Attrs: nounwind readnone
+declare void @llvm.dbg.declare(metadata, metadata) #2
+
+declare i8* @mem_sbrk(i64) #1
+
+; Function Attrs: nounwind uwtable
+define internal i64 @pack(i64 %size, i1 zeroext %alloc) #0 {
+  %1 = alloca i64, align 8
+  %2 = alloca i8, align 1
+  store i64 %size, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !136), !dbg !137
+  %3 = zext i1 %alloc to i8
+  store i8 %3, i8* %2, align 1
+  call void @llvm.dbg.declare(metadata !{i8* %2}, metadata !138), !dbg !137
+  %4 = load i8* %2, align 1, !dbg !139
+  %5 = trunc i8 %4 to i1, !dbg !139
+  br i1 %5, label %6, label %9, !dbg !139
+
+; <label>:6                                       ; preds = %0
+  %7 = load i64* %1, align 8, !dbg !139
+  %8 = or i64 %7, 1, !dbg !139
+  br label %11, !dbg !139
+
+; <label>:9                                       ; preds = %0
+  %10 = load i64* %1, align 8, !dbg !139
+  br label %11, !dbg !139
+
+; <label>:11                                      ; preds = %9, %6
+  %12 = phi i64 [ %8, %6 ], [ %10, %9 ], !dbg !139
+  ret i64 %12, !dbg !139
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @extend_heap(i64 %size) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %bp = alloca i8*, align 8
+  %block = alloca %struct.block*, align 8
+  %block_next = alloca %struct.block*, align 8
+  store i64 %size, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !140), !dbg !141
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str33, i32 0, i32 0)), !dbg !142
+  call void @llvm.dbg.declare(metadata !{i8** %bp}, metadata !143), !dbg !144
+  %4 = load i64* %2, align 8, !dbg !145
+  %5 = call i64 @round_up(i64 %4, i64 16), !dbg !145
+  store i64 %5, i64* %2, align 8, !dbg !145
+  %6 = load i64* %2, align 8, !dbg !146
+  %7 = call i8* @mem_sbrk(i64 %6), !dbg !146
+  store i8* %7, i8** %bp, align 8, !dbg !146
+  %8 = icmp eq i8* %7, inttoptr (i64 -1 to i8*), !dbg !146
+  br i1 %8, label %9, label %10, !dbg !146
+
+; <label>:9                                       ; preds = %0
+  store %struct.block* null, %struct.block** %1, !dbg !148
+  br label %21, !dbg !148
+
+; <label>:10                                      ; preds = %0
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !150), !dbg !151
+  %11 = load i8** %bp, align 8, !dbg !151
+  %12 = call %struct.block* @payload_to_header(i8* %11), !dbg !151
+  store %struct.block* %12, %struct.block** %block, align 8, !dbg !151
+  %13 = load %struct.block** %block, align 8, !dbg !152
+  %14 = load i64* %2, align 8, !dbg !152
+  call void @pack_block(%struct.block* %13, i64 %14, i1 zeroext false), !dbg !152
+  %15 = load %struct.block** %block, align 8, !dbg !153
+  call void @push_to_freel(%struct.block* %15), !dbg !153
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block_next}, metadata !154), !dbg !155
+  %16 = load %struct.block** %block, align 8, !dbg !155
+  %17 = call %struct.block* @find_next(%struct.block* %16), !dbg !155
+  store %struct.block* %17, %struct.block** %block_next, align 8, !dbg !155
+  %18 = load %struct.block** %block_next, align 8, !dbg !156
+  call void @write_header(%struct.block* %18, i64 0, i1 zeroext true), !dbg !156
+  %19 = load %struct.block** %block, align 8, !dbg !157
+  %20 = call %struct.block* @coalesce(%struct.block* %19), !dbg !157
+  store %struct.block* %20, %struct.block** %1, !dbg !157
+  br label %21, !dbg !157
+
+; <label>:21                                      ; preds = %10, %9
+  %22 = load %struct.block** %1, !dbg !158
+  ret %struct.block* %22, !dbg !158
+}
+
+; Function Attrs: nounwind uwtable
+define i8* @mm_malloc(i64 %size) #0 {
+  %1 = alloca i8*, align 8
+  %2 = alloca i64, align 8
+  %asize = alloca i64, align 8
+  %extendsize = alloca i64, align 8
+  %block = alloca %struct.block*, align 8
+  %bp = alloca i8*, align 8
+  store i64 %size, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !159), !dbg !160
+  br i1 true, label %3, label %4, !dbg !161
+
+; <label>:3                                       ; preds = %0
+  br label %6, !dbg !161
+
+; <label>:4                                       ; preds = %0
+  call void @__assert_fail(i8* getelementptr inbounds ([13 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str2, i32 0, i32 0), i32 157, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__.mm_malloc, i32 0, i32 0)) #4, !dbg !161
+  unreachable, !dbg !161
+                                                  ; No predecessors!
+  br label %6, !dbg !161
+
+; <label>:6                                       ; preds = %5, %3
+  %7 = load i64* %2, align 8, !dbg !162
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str3, i32 0, i32 0), i64 %7), !dbg !162
+  call void @llvm.dbg.declare(metadata !{i64* %asize}, metadata !163), !dbg !164
+  call void @llvm.dbg.declare(metadata !{i64* %extendsize}, metadata !165), !dbg !166
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !167), !dbg !168
+  call void @llvm.dbg.declare(metadata !{i8** %bp}, metadata !169), !dbg !170
+  store i8* null, i8** %bp, align 8, !dbg !170
+  %9 = load %struct.block** @heap_listp, align 8, !dbg !171
+  %10 = icmp eq %struct.block* %9, null, !dbg !171
+  br i1 %10, label %11, label %13, !dbg !171
+
+; <label>:11                                      ; preds = %6
+  %12 = call zeroext i1 @mm_init(), !dbg !173
+  br label %13, !dbg !175
+
+; <label>:13                                      ; preds = %11, %6
+  %14 = load i64* %2, align 8, !dbg !176
+  %15 = icmp eq i64 %14, 0, !dbg !176
+  br i1 %15, label %16, label %22, !dbg !176
+
+; <label>:16                                      ; preds = %13
+  br i1 true, label %17, label %18, !dbg !178
+
+; <label>:17                                      ; preds = %16
+  br label %20, !dbg !178
+
+; <label>:18                                      ; preds = %16
+  call void @__assert_fail(i8* getelementptr inbounds ([13 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str2, i32 0, i32 0), i32 173, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__.mm_malloc, i32 0, i32 0)) #4, !dbg !178
+  unreachable, !dbg !178
+                                                  ; No predecessors!
+  br label %20, !dbg !178
+
+; <label>:20                                      ; preds = %19, %17
+  %21 = load i8** %bp, align 8, !dbg !180
+  store i8* %21, i8** %1, !dbg !180
+  br label %53, !dbg !180
+
+; <label>:22                                      ; preds = %13
+  %23 = load i64* %2, align 8, !dbg !181
+  %24 = call i64 @round_up(i64 %23, i64 16), !dbg !181
+  %25 = add i64 %24, 16, !dbg !181
+  store i64 %25, i64* %asize, align 8, !dbg !181
+  %26 = load i64* %asize, align 8, !dbg !182
+  %27 = call %struct.block* @find_fit(i64 %26), !dbg !182
+  store %struct.block* %27, %struct.block** %block, align 8, !dbg !182
+  %28 = load %struct.block** %block, align 8, !dbg !183
+  %29 = icmp eq %struct.block* %28, null, !dbg !183
+  br i1 %29, label %30, label %40, !dbg !183
+
+; <label>:30                                      ; preds = %22
+  %31 = load i64* %asize, align 8, !dbg !185
+  %32 = call i64 @max(i64 %31, i64 4096), !dbg !185
+  store i64 %32, i64* %extendsize, align 8, !dbg !185
+  %33 = load i64* %extendsize, align 8, !dbg !187
+  %34 = call %struct.block* @extend_heap(i64 %33), !dbg !187
+  store %struct.block* %34, %struct.block** %block, align 8, !dbg !187
+  %35 = load %struct.block** %block, align 8, !dbg !188
+  %36 = icmp eq %struct.block* %35, null, !dbg !188
+  br i1 %36, label %37, label %39, !dbg !188
+
+; <label>:37                                      ; preds = %30
+  %38 = load i8** %bp, align 8, !dbg !190
+  store i8* %38, i8** %1, !dbg !190
+  br label %53, !dbg !190
+
+; <label>:39                                      ; preds = %30
+  br label %40, !dbg !192
+
+; <label>:40                                      ; preds = %39, %22
+  %41 = load %struct.block** %block, align 8, !dbg !193
+  %42 = load i64* %asize, align 8, !dbg !193
+  call void @place(%struct.block* %41, i64 %42), !dbg !193
+  %43 = load %struct.block** %block, align 8, !dbg !194
+  %44 = call i8* @header_to_payload(%struct.block* %43), !dbg !194
+  store i8* %44, i8** %bp, align 8, !dbg !194
+  %45 = load i64* %2, align 8, !dbg !195
+  %46 = load i8** %bp, align 8, !dbg !195
+  %47 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([32 x i8]* @.str4, i32 0, i32 0), i64 %45, i8* %46), !dbg !195
+  br i1 true, label %48, label %49, !dbg !196
+
+; <label>:48                                      ; preds = %40
+  br label %51, !dbg !196
+
+; <label>:49                                      ; preds = %40
+  call void @__assert_fail(i8* getelementptr inbounds ([13 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str2, i32 0, i32 0), i32 198, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__.mm_malloc, i32 0, i32 0)) #4, !dbg !196
+  unreachable, !dbg !196
+                                                  ; No predecessors!
+  br label %51, !dbg !196
+
+; <label>:51                                      ; preds = %50, %48
+  %52 = load i8** %bp, align 8, !dbg !197
+  store i8* %52, i8** %1, !dbg !197
+  br label %53, !dbg !197
+
+; <label>:53                                      ; preds = %51, %37, %20
+  %54 = load i8** %1, !dbg !198
+  ret i8* %54, !dbg !198
+}
+
+; Function Attrs: nounwind uwtable
+define zeroext i1 @mm_checkheap(i32 %lineno) #0 {
+  %1 = alloca i1, align 1
+  %2 = alloca i32, align 4
+  %pf = alloca i64*, align 8
+  %block = alloca %struct.block*, align 8
+  %free_lsize = alloca i32, align 4
+  %free_hsize = alloca i32, align 4
+  store i32 %lineno, i32* %2, align 4
+  call void @llvm.dbg.declare(metadata !{i32* %2}, metadata !199), !dbg !200
+  %3 = load i32* %2, align 4, !dbg !201
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([37 x i8]* @.str14, i32 0, i32 0), i32 %3), !dbg !201
+  call void @llvm.dbg.declare(metadata !{i64** %pf}, metadata !202), !dbg !203
+  %5 = load %struct.block** @heap_listp, align 8, !dbg !203
+  %6 = call i64* @find_prev_footer(%struct.block* %5), !dbg !203
+  store i64* %6, i64** %pf, align 8, !dbg !203
+  %7 = load i64** %pf, align 8, !dbg !204
+  %8 = load i64* %7, align 8, !dbg !204
+  %9 = call i64 @extract_size(i64 %8), !dbg !204
+  %10 = icmp ne i64 %9, 0, !dbg !204
+  br i1 %10, label %11, label %13, !dbg !204
+
+; <label>:11                                      ; preds = %0
+  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([52 x i8]* @.str15, i32 0, i32 0), i64** %pf), !dbg !206
+  store i1 false, i1* %1, !dbg !208
+  br label %140, !dbg !208
+
+; <label>:13                                      ; preds = %0
+  %14 = load i64** %pf, align 8, !dbg !209
+  %15 = load i64* %14, align 8, !dbg !209
+  %16 = call zeroext i1 @extract_alloc(i64 %15), !dbg !209
+  br i1 %16, label %19, label %17, !dbg !209
+
+; <label>:17                                      ; preds = %13
+  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([54 x i8]* @.str16, i32 0, i32 0), i64** %pf), !dbg !211
+  store i1 false, i1* %1, !dbg !213
+  br label %140, !dbg !213
+
+; <label>:19                                      ; preds = %13
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !214), !dbg !215
+  %20 = load %struct.block** @heap_listp, align 8, !dbg !216
+  store %struct.block* %20, %struct.block** %block, align 8, !dbg !216
+  br label %21, !dbg !216
+
+; <label>:21                                      ; preds = %30, %19
+  %22 = load %struct.block** %block, align 8, !dbg !216
+  %23 = call i64 @get_size(%struct.block* %22), !dbg !216
+  %24 = icmp ugt i64 %23, 0, !dbg !216
+  br i1 %24, label %25, label %33, !dbg !216
+
+; <label>:25                                      ; preds = %21
+  %26 = load %struct.block** %block, align 8, !dbg !218
+  %27 = call zeroext i1 @mm_checkblock(%struct.block* %26), !dbg !218
+  br i1 %27, label %29, label %28, !dbg !218
+
+; <label>:28                                      ; preds = %25
+  store i1 false, i1* %1, !dbg !218
+  br label %140, !dbg !218
+
+; <label>:29                                      ; preds = %25
+  br label %30, !dbg !221
+
+; <label>:30                                      ; preds = %29
+  %31 = load %struct.block** %block, align 8, !dbg !216
+  %32 = call %struct.block* @find_next(%struct.block* %31), !dbg !216
+  store %struct.block* %32, %struct.block** %block, align 8, !dbg !216
+  br label %21, !dbg !216
+
+; <label>:33                                      ; preds = %21
+  %34 = load %struct.block** %block, align 8, !dbg !222
+  %35 = call i64 @get_size(%struct.block* %34), !dbg !222
+  %36 = icmp ne i64 %35, 0, !dbg !222
+  br i1 %36, label %37, label %40, !dbg !222
+
+; <label>:37                                      ; preds = %33
+  %38 = load %struct.block** %block, align 8, !dbg !224
+  %39 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([52 x i8]* @.str17, i32 0, i32 0), %struct.block* %38), !dbg !224
+  store i1 false, i1* %1, !dbg !226
+  br label %140, !dbg !226
+
+; <label>:40                                      ; preds = %33
+  %41 = load %struct.block** %block, align 8, !dbg !227
+  %42 = call zeroext i1 @get_alloc(%struct.block* %41), !dbg !227
+  br i1 %42, label %46, label %43, !dbg !227
+
+; <label>:43                                      ; preds = %40
+  %44 = load %struct.block** %block, align 8, !dbg !229
+  %45 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([54 x i8]* @.str18, i32 0, i32 0), %struct.block* %44), !dbg !229
+  store i1 false, i1* %1, !dbg !231
+  br label %140, !dbg !231
+
+; <label>:46                                      ; preds = %40
+  call void @llvm.dbg.declare(metadata !{i32* %free_lsize}, metadata !232), !dbg !233
+  store i32 0, i32* %free_lsize, align 4, !dbg !233
+  call void @llvm.dbg.declare(metadata !{i32* %free_hsize}, metadata !234), !dbg !235
+  store i32 0, i32* %free_hsize, align 4, !dbg !235
+  %47 = load %struct.block** @free_listp, align 8, !dbg !236
+  store %struct.block* %47, %struct.block** %block, align 8, !dbg !236
+  br label %48, !dbg !236
+
+; <label>:48                                      ; preds = %110, %46
+  %49 = load %struct.block** %block, align 8, !dbg !236
+  %50 = call %struct.block** @get_nextp(%struct.block* %49), !dbg !236
+  %51 = load %struct.block** %50, align 8, !dbg !236
+  %52 = icmp ne %struct.block* %51, null, !dbg !236
+  br i1 %52, label %53, label %114, !dbg !236
+
+; <label>:53                                      ; preds = %48
+  %54 = load i32* %free_lsize, align 4, !dbg !238
+  %55 = add nsw i32 %54, 1, !dbg !238
+  store i32 %55, i32* %free_lsize, align 4, !dbg !238
+  %56 = load %struct.block** %block, align 8, !dbg !240
+  %57 = call %struct.block** @get_nextp(%struct.block* %56), !dbg !240
+  %58 = load %struct.block** %57, align 8, !dbg !240
+  %59 = icmp ne %struct.block* %58, null, !dbg !240
+  br i1 %59, label %60, label %71, !dbg !240
+
+; <label>:60                                      ; preds = %53
+  %61 = load %struct.block** %block, align 8, !dbg !240
+  %62 = call %struct.block** @get_nextp(%struct.block* %61), !dbg !240
+  %63 = load %struct.block** %62, align 8, !dbg !240
+  %64 = bitcast %struct.block* %63 to i8*, !dbg !240
+  %65 = call zeroext i1 @in_heap(i8* %64), !dbg !240
+  br i1 %65, label %71, label %66, !dbg !240
+
+; <label>:66                                      ; preds = %60
+  %67 = load %struct.block** %block, align 8, !dbg !242
+  %68 = call %struct.block** @get_nextp(%struct.block* %67), !dbg !242
+  %69 = load %struct.block** %68, align 8, !dbg !242
+  %70 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([45 x i8]* @.str19, i32 0, i32 0), %struct.block* %69), !dbg !242
+  store i1 false, i1* %1, !dbg !244
+  br label %140, !dbg !244
+
+; <label>:71                                      ; preds = %60, %53
+  %72 = load %struct.block** %block, align 8, !dbg !245
+  %73 = call %struct.block** @get_prevp(%struct.block* %72), !dbg !245
+  %74 = load %struct.block** %73, align 8, !dbg !245
+  %75 = icmp ne %struct.block* %74, null, !dbg !245
+  br i1 %75, label %76, label %87, !dbg !245
+
+; <label>:76                                      ; preds = %71
+  %77 = load %struct.block** %block, align 8, !dbg !245
+  %78 = call %struct.block** @get_prevp(%struct.block* %77), !dbg !245
+  %79 = load %struct.block** %78, align 8, !dbg !245
+  %80 = bitcast %struct.block* %79 to i8*, !dbg !245
+  %81 = call zeroext i1 @in_heap(i8* %80), !dbg !245
+  br i1 %81, label %87, label %82, !dbg !245
+
+; <label>:82                                      ; preds = %76
+  %83 = load %struct.block** %block, align 8, !dbg !247
+  %84 = call %struct.block** @get_prevp(%struct.block* %83), !dbg !247
+  %85 = load %struct.block** %84, align 8, !dbg !247
+  %86 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([45 x i8]* @.str20, i32 0, i32 0), %struct.block* %85), !dbg !247
+  store i1 false, i1* %1, !dbg !249
+  br label %140, !dbg !249
+
+; <label>:87                                      ; preds = %76, %71
+  %88 = load %struct.block** %block, align 8, !dbg !250
+  %89 = load %struct.block** %block, align 8, !dbg !250
+  %90 = call %struct.block** @get_nextp(%struct.block* %89), !dbg !250
+  %91 = load %struct.block** %90, align 8, !dbg !250
+  %92 = call %struct.block** @get_prevp(%struct.block* %91), !dbg !250
+  %93 = load %struct.block** %92, align 8, !dbg !250
+  %94 = icmp ne %struct.block* %88, %93, !dbg !250
+  br i1 %94, label %95, label %109, !dbg !250
+
+; <label>:95                                      ; preds = %87
+  %96 = load %struct.block** %block, align 8, !dbg !252
+  %97 = load %struct.block** %block, align 8, !dbg !254
+  %98 = call %struct.block** @get_nextp(%struct.block* %97), !dbg !254
+  %99 = load %struct.block** %98, align 8, !dbg !254
+  %100 = load %struct.block** %block, align 8, !dbg !255
+  %101 = call %struct.block** @get_nextp(%struct.block* %100), !dbg !255
+  %102 = load %struct.block** %101, align 8, !dbg !255
+  %103 = load %struct.block** %block, align 8, !dbg !255
+  %104 = call %struct.block** @get_nextp(%struct.block* %103), !dbg !255
+  %105 = load %struct.block** %104, align 8, !dbg !255
+  %106 = call %struct.block** @get_prevp(%struct.block* %105), !dbg !255
+  %107 = load %struct.block** %106, align 8, !dbg !255
+  %108 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([66 x i8]* @.str21, i32 0, i32 0), %struct.block* %96, %struct.block* %99, %struct.block* %102, %struct.block* %107), !dbg !252
+  store i1 false, i1* %1, !dbg !256
+  br label %140, !dbg !256
+
+; <label>:109                                     ; preds = %87
+  br label %110, !dbg !257
+
+; <label>:110                                     ; preds = %109
+  %111 = load %struct.block** %block, align 8, !dbg !236
+  %112 = call %struct.block** @get_nextp(%struct.block* %111), !dbg !236
+  %113 = load %struct.block** %112, align 8, !dbg !236
+  store %struct.block* %113, %struct.block** %block, align 8, !dbg !236
+  br label %48, !dbg !236
+
+; <label>:114                                     ; preds = %48
+  %115 = load %struct.block** @heap_listp, align 8, !dbg !258
+  store %struct.block* %115, %struct.block** %block, align 8, !dbg !258
+  br label %116, !dbg !258
+
+; <label>:116                                     ; preds = %127, %114
+  %117 = load %struct.block** %block, align 8, !dbg !258
+  %118 = call i64 @get_size(%struct.block* %117), !dbg !258
+  %119 = icmp ugt i64 %118, 0, !dbg !258
+  br i1 %119, label %120, label %130, !dbg !258
+
+; <label>:120                                     ; preds = %116
+  %121 = load %struct.block** %block, align 8, !dbg !260
+  %122 = call zeroext i1 @get_alloc(%struct.block* %121), !dbg !260
+  br i1 %122, label %126, label %123, !dbg !260
+
+; <label>:123                                     ; preds = %120
+  %124 = load i32* %free_hsize, align 4, !dbg !263
+  %125 = add nsw i32 %124, 1, !dbg !263
+  store i32 %125, i32* %free_hsize, align 4, !dbg !263
+  br label %126, !dbg !265
+
+; <label>:126                                     ; preds = %123, %120
+  br label %127, !dbg !266
+
+; <label>:127                                     ; preds = %126
+  %128 = load %struct.block** %block, align 8, !dbg !258
+  %129 = call %struct.block* @find_next(%struct.block* %128), !dbg !258
+  store %struct.block* %129, %struct.block** %block, align 8, !dbg !258
+  br label %116, !dbg !258
+
+; <label>:130                                     ; preds = %116
+  %131 = load i32* %free_lsize, align 4, !dbg !267
+  %132 = load i32* %free_hsize, align 4, !dbg !267
+  %133 = icmp ne i32 %131, %132, !dbg !267
+  br i1 %133, label %134, label %138, !dbg !267
+
+; <label>:134                                     ; preds = %130
+  %135 = load i32* %free_lsize, align 4, !dbg !269
+  %136 = load i32* %free_hsize, align 4, !dbg !269
+  %137 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str22, i32 0, i32 0), i32 %135, i32 %136), !dbg !269
+  store i1 false, i1* %1, !dbg !271
+  br label %140, !dbg !271
+
+; <label>:138                                     ; preds = %130
+  %139 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([18 x i8]* @.str23, i32 0, i32 0)), !dbg !272
+  store i1 true, i1* %1, !dbg !273
+  br label %140, !dbg !273
+
+; <label>:140                                     ; preds = %138, %134, %95, %82, %66, %43, %37, %28, %17, %11
+  %141 = load i1* %1, !dbg !274
+  ret i1 %141, !dbg !274
+}
+
+; Function Attrs: noreturn nounwind
+declare void @__assert_fail(i8*, i8*, i32, i8*) #3
+
+; Function Attrs: nounwind uwtable
+define internal i64 @round_up(i64 %size, i64 %n) #0 {
+  %1 = alloca i64, align 8
+  %2 = alloca i64, align 8
+  store i64 %size, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !275), !dbg !276
+  store i64 %n, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !277), !dbg !276
+  %3 = load i64* %2, align 8, !dbg !278
+  %4 = load i64* %1, align 8, !dbg !278
+  %5 = load i64* %2, align 8, !dbg !278
+  %6 = sub i64 %5, 1, !dbg !278
+  %7 = add i64 %4, %6, !dbg !278
+  %8 = load i64* %2, align 8, !dbg !278
+  %9 = udiv i64 %7, %8, !dbg !278
+  %10 = mul i64 %3, %9, !dbg !278
+  ret i64 %10, !dbg !278
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @find_fit(i64 %asize) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %block = alloca %struct.block*, align 8
+  store i64 %asize, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !279), !dbg !280
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str26, i32 0, i32 0)), !dbg !281
+  %4 = load %struct.block** @free_listp, align 8, !dbg !282
+  %5 = icmp eq %struct.block* %4, null, !dbg !282
+  br i1 %5, label %6, label %7, !dbg !282
+
+; <label>:6                                       ; preds = %0
+  store %struct.block* null, %struct.block** %1, !dbg !282
+  br label %27, !dbg !282
+
+; <label>:7                                       ; preds = %0
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !284), !dbg !285
+  %8 = load %struct.block** @free_listp, align 8, !dbg !286
+  store %struct.block* %8, %struct.block** %block, align 8, !dbg !286
+  br label %9, !dbg !286
+
+; <label>:9                                       ; preds = %22, %7
+  %10 = load %struct.block** %block, align 8, !dbg !286
+  %11 = call %struct.block** @get_nextp(%struct.block* %10), !dbg !286
+  %12 = load %struct.block** %11, align 8, !dbg !286
+  %13 = icmp ne %struct.block* %12, null, !dbg !286
+  br i1 %13, label %14, label %26, !dbg !286
+
+; <label>:14                                      ; preds = %9
+  %15 = load i64* %2, align 8, !dbg !288
+  %16 = load %struct.block** %block, align 8, !dbg !288
+  %17 = call i64 @get_size(%struct.block* %16), !dbg !288
+  %18 = icmp ule i64 %15, %17, !dbg !288
+  br i1 %18, label %19, label %21, !dbg !288
+
+; <label>:19                                      ; preds = %14
+  %20 = load %struct.block** %block, align 8, !dbg !291
+  store %struct.block* %20, %struct.block** %1, !dbg !291
+  br label %27, !dbg !291
+
+; <label>:21                                      ; preds = %14
+  br label %22, !dbg !293
+
+; <label>:22                                      ; preds = %21
+  %23 = load %struct.block** %block, align 8, !dbg !286
+  %24 = call %struct.block** @get_nextp(%struct.block* %23), !dbg !286
+  %25 = load %struct.block** %24, align 8, !dbg !286
+  store %struct.block* %25, %struct.block** %block, align 8, !dbg !286
+  br label %9, !dbg !286
+
+; <label>:26                                      ; preds = %9
+  store %struct.block* null, %struct.block** %1, !dbg !294
+  br label %27, !dbg !294
+
+; <label>:27                                      ; preds = %26, %19, %6
+  %28 = load %struct.block** %1, !dbg !295
+  ret %struct.block* %28, !dbg !295
+}
+
+; Function Attrs: nounwind uwtable
+define internal i64 @max(i64 %x, i64 %y) #0 {
+  %1 = alloca i64, align 8
+  %2 = alloca i64, align 8
+  store i64 %x, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !296), !dbg !297
+  store i64 %y, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !298), !dbg !297
+  %3 = load i64* %1, align 8, !dbg !299
+  %4 = load i64* %2, align 8, !dbg !299
+  %5 = icmp ugt i64 %3, %4, !dbg !299
+  br i1 %5, label %6, label %8, !dbg !299
+
+; <label>:6                                       ; preds = %0
+  %7 = load i64* %1, align 8, !dbg !299
+  br label %10, !dbg !299
+
+; <label>:8                                       ; preds = %0
+  %9 = load i64* %2, align 8, !dbg !299
+  br label %10, !dbg !299
+
+; <label>:10                                      ; preds = %8, %6
+  %11 = phi i64 [ %7, %6 ], [ %9, %8 ], !dbg !299
+  ret i64 %11, !dbg !299
+}
+
+; Function Attrs: nounwind uwtable
+define internal void @place(%struct.block* %block, i64 %asize) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %csize = alloca i64, align 8
+  %block_next = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !300), !dbg !301
+  store i64 %asize, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !302), !dbg !301
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str27, i32 0, i32 0)), !dbg !303
+  %4 = load %struct.block** %1, align 8, !dbg !304
+  call void @pop_from_freel(%struct.block* %4), !dbg !304
+  call void @llvm.dbg.declare(metadata !{i64* %csize}, metadata !305), !dbg !306
+  %5 = load %struct.block** %1, align 8, !dbg !306
+  %6 = call i64 @get_size(%struct.block* %5), !dbg !306
+  store i64 %6, i64* %csize, align 8, !dbg !306
+  %7 = load i64* %csize, align 8, !dbg !307
+  %8 = load i64* %2, align 8, !dbg !307
+  %9 = sub i64 %7, %8, !dbg !307
+  %10 = icmp uge i64 %9, 32, !dbg !307
+  br i1 %10, label %11, label %21, !dbg !307
+
+; <label>:11                                      ; preds = %0
+  %12 = load %struct.block** %1, align 8, !dbg !309
+  %13 = load i64* %2, align 8, !dbg !309
+  call void @pack_block(%struct.block* %12, i64 %13, i1 zeroext true), !dbg !309
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block_next}, metadata !311), !dbg !312
+  %14 = load %struct.block** %1, align 8, !dbg !312
+  %15 = call %struct.block* @find_next(%struct.block* %14), !dbg !312
+  store %struct.block* %15, %struct.block** %block_next, align 8, !dbg !312
+  %16 = load %struct.block** %block_next, align 8, !dbg !313
+  %17 = load i64* %csize, align 8, !dbg !313
+  %18 = load i64* %2, align 8, !dbg !313
+  %19 = sub i64 %17, %18, !dbg !313
+  call void @pack_block(%struct.block* %16, i64 %19, i1 zeroext false), !dbg !313
+  %20 = load %struct.block** %block_next, align 8, !dbg !314
+  call void @push_to_freel(%struct.block* %20), !dbg !314
+  br label %24, !dbg !315
+
+; <label>:21                                      ; preds = %0
+  %22 = load %struct.block** %1, align 8, !dbg !316
+  %23 = load i64* %csize, align 8, !dbg !316
+  call void @pack_block(%struct.block* %22, i64 %23, i1 zeroext true), !dbg !316
+  br label %24
+
+; <label>:24                                      ; preds = %21, %11
+  ret void, !dbg !318
+}
+
+; Function Attrs: nounwind uwtable
+define internal i8* @header_to_payload(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !319), !dbg !320
+  %2 = load %struct.block** %1, align 8, !dbg !321
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 1, !dbg !321
+  %4 = getelementptr inbounds [0 x i8]* %3, i32 0, i32 0, !dbg !321
+  ret i8* %4, !dbg !321
+}
+
+; Function Attrs: nounwind uwtable
+define void @mm_free(i8* %ptr) #0 {
+  %1 = alloca i8*, align 8
+  %block = alloca %struct.block*, align 8
+  %size = alloca i64, align 8
+  store i8* %ptr, i8** %1, align 8
+  call void @llvm.dbg.declare(metadata !{i8** %1}, metadata !322), !dbg !323
+  %2 = load i8** %1, align 8, !dbg !324
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str5, i32 0, i32 0), i8* %2), !dbg !324
+  %4 = load i8** %1, align 8, !dbg !325
+  %5 = icmp eq i8* %4, null, !dbg !325
+  br i1 %5, label %6, label %7, !dbg !325
+
+; <label>:6                                       ; preds = %0
+  br label %17, !dbg !327
+
+; <label>:7                                       ; preds = %0
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !329), !dbg !330
+  %8 = load i8** %1, align 8, !dbg !330
+  %9 = call %struct.block* @payload_to_header(i8* %8), !dbg !330
+  store %struct.block* %9, %struct.block** %block, align 8, !dbg !330
+  call void @llvm.dbg.declare(metadata !{i64* %size}, metadata !331), !dbg !332
+  %10 = load %struct.block** %block, align 8, !dbg !332
+  %11 = call i64 @get_size(%struct.block* %10), !dbg !332
+  store i64 %11, i64* %size, align 8, !dbg !332
+  %12 = load %struct.block** %block, align 8, !dbg !333
+  %13 = load i64* %size, align 8, !dbg !333
+  call void @pack_block(%struct.block* %12, i64 %13, i1 zeroext false), !dbg !333
+  %14 = load %struct.block** %block, align 8, !dbg !334
+  call void @push_to_freel(%struct.block* %14), !dbg !334
+  %15 = load %struct.block** %block, align 8, !dbg !335
+  %16 = call %struct.block* @coalesce(%struct.block* %15), !dbg !335
+  br label %17, !dbg !336
+
+; <label>:17                                      ; preds = %7, %6
+  ret void, !dbg !336
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @payload_to_header(i8* %bp) #0 {
+  %1 = alloca i8*, align 8
+  store i8* %bp, i8** %1, align 8
+  call void @llvm.dbg.declare(metadata !{i8** %1}, metadata !337), !dbg !338
+  %2 = load i8** %1, align 8, !dbg !339
+  %3 = getelementptr inbounds i8* %2, i64 -8, !dbg !339
+  %4 = bitcast i8* %3 to %struct.block*, !dbg !339
+  ret %struct.block* %4, !dbg !339
+}
+
+; Function Attrs: nounwind uwtable
+define internal i64 @get_size(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !340), !dbg !341
+  %2 = load %struct.block** %1, align 8, !dbg !342
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 0, !dbg !342
+  %4 = load i64* %3, align 8, !dbg !342
+  %5 = call i64 @extract_size(i64 %4), !dbg !342
+  ret i64 %5, !dbg !342
+}
+
+; Function Attrs: nounwind uwtable
+define void @pack_block(%struct.block* %block, i64 %size, i1 zeroext %alloc) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %3 = alloca i8, align 1
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !343), !dbg !344
+  store i64 %size, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !345), !dbg !344
+  %4 = zext i1 %alloc to i8
+  store i8 %4, i8* %3, align 1
+  call void @llvm.dbg.declare(metadata !{i8* %3}, metadata !346), !dbg !344
+  %5 = load %struct.block** %1, align 8, !dbg !347
+  %6 = load i64* %2, align 8, !dbg !347
+  %7 = load i8* %3, align 1, !dbg !347
+  %8 = trunc i8 %7 to i1, !dbg !347
+  call void @write_header(%struct.block* %5, i64 %6, i1 zeroext %8), !dbg !347
+  %9 = load %struct.block** %1, align 8, !dbg !348
+  %10 = load i64* %2, align 8, !dbg !348
+  %11 = load i8* %3, align 1, !dbg !348
+  %12 = trunc i8 %11 to i1, !dbg !348
+  call void @write_footer(%struct.block* %9, i64 %10, i1 zeroext %12), !dbg !348
+  ret void, !dbg !349
+}
+
+; Function Attrs: nounwind uwtable
+define void @push_to_freel(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %block_pp = alloca %struct.block**, align 8
+  %block_np = alloca %struct.block**, align 8
+  %free_listp_pp = alloca %struct.block**, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !350), !dbg !351
+  %2 = load %struct.block** %1, align 8, !dbg !352
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str6, i32 0, i32 0), %struct.block* %2), !dbg !352
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_pp}, metadata !353), !dbg !354
+  %4 = load %struct.block** %1, align 8, !dbg !354
+  %5 = call %struct.block** @get_prevp(%struct.block* %4), !dbg !354
+  store %struct.block** %5, %struct.block*** %block_pp, align 8, !dbg !354
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_np}, metadata !355), !dbg !356
+  %6 = load %struct.block** %1, align 8, !dbg !356
+  %7 = call %struct.block** @get_nextp(%struct.block* %6), !dbg !356
+  store %struct.block** %7, %struct.block*** %block_np, align 8, !dbg !356
+  %8 = load %struct.block*** %block_pp, align 8, !dbg !357
+  store %struct.block* null, %struct.block** %8, align 8, !dbg !357
+  %9 = load %struct.block** @free_listp, align 8, !dbg !358
+  %10 = load %struct.block*** %block_np, align 8, !dbg !358
+  store %struct.block* %9, %struct.block** %10, align 8, !dbg !358
+  %11 = load %struct.block** @free_listp, align 8, !dbg !359
+  %12 = icmp ne %struct.block* %11, null, !dbg !359
+  br i1 %12, label %13, label %18, !dbg !359
+
+; <label>:13                                      ; preds = %0
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %free_listp_pp}, metadata !361), !dbg !363
+  %14 = load %struct.block** @free_listp, align 8, !dbg !363
+  %15 = call %struct.block** @get_prevp(%struct.block* %14), !dbg !363
+  store %struct.block** %15, %struct.block*** %free_listp_pp, align 8, !dbg !363
+  %16 = load %struct.block** %1, align 8, !dbg !364
+  %17 = load %struct.block*** %free_listp_pp, align 8, !dbg !364
+  store %struct.block* %16, %struct.block** %17, align 8, !dbg !364
+  br label %18, !dbg !365
+
+; <label>:18                                      ; preds = %13, %0
+  %19 = load %struct.block** %1, align 8, !dbg !366
+  store %struct.block* %19, %struct.block** @free_listp, align 8, !dbg !366
+  ret void, !dbg !367
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @coalesce(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca %struct.block*, align 8
+  %block_next = alloca %struct.block*, align 8
+  %block_prev = alloca %struct.block*, align 8
+  %prev_alloc = alloca i8, align 1
+  %next_alloc = alloca i8, align 1
+  %size = alloca i64, align 8
+  %block_next_pp = alloca %struct.block**, align 8
+  %block_next_np = alloca %struct.block**, align 8
+  %block_pp = alloca %struct.block**, align 8
+  %block_np = alloca %struct.block**, align 8
+  %block_pp1 = alloca %struct.block**, align 8
+  %block_np2 = alloca %struct.block**, align 8
+  %block_next_pp3 = alloca %struct.block**, align 8
+  %block_next_np4 = alloca %struct.block**, align 8
+  store %struct.block* %block, %struct.block** %2, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %2}, metadata !368), !dbg !369
+  %3 = load %struct.block** %2, align 8, !dbg !370
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str28, i32 0, i32 0), %struct.block* %3), !dbg !370
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block_next}, metadata !371), !dbg !372
+  %5 = load %struct.block** %2, align 8, !dbg !372
+  %6 = call %struct.block* @find_next(%struct.block* %5), !dbg !372
+  store %struct.block* %6, %struct.block** %block_next, align 8, !dbg !372
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block_prev}, metadata !373), !dbg !374
+  %7 = load %struct.block** %2, align 8, !dbg !374
+  %8 = call %struct.block* @find_prev(%struct.block* %7), !dbg !374
+  store %struct.block* %8, %struct.block** %block_prev, align 8, !dbg !374
+  call void @llvm.dbg.declare(metadata !{i8* %prev_alloc}, metadata !375), !dbg !376
+  %9 = load %struct.block** %2, align 8, !dbg !376
+  %10 = call i64* @find_prev_footer(%struct.block* %9), !dbg !376
+  %11 = load i64* %10, align 8, !dbg !376
+  %12 = call zeroext i1 @extract_alloc(i64 %11), !dbg !376
+  %13 = zext i1 %12 to i8, !dbg !376
+  store i8 %13, i8* %prev_alloc, align 1, !dbg !376
+  call void @llvm.dbg.declare(metadata !{i8* %next_alloc}, metadata !377), !dbg !378
+  %14 = load %struct.block** %block_next, align 8, !dbg !378
+  %15 = call zeroext i1 @get_alloc(%struct.block* %14), !dbg !378
+  %16 = zext i1 %15 to i8, !dbg !378
+  store i8 %16, i8* %next_alloc, align 1, !dbg !378
+  call void @llvm.dbg.declare(metadata !{i64* %size}, metadata !379), !dbg !380
+  %17 = load %struct.block** %2, align 8, !dbg !380
+  %18 = call i64 @get_size(%struct.block* %17), !dbg !380
+  store i64 %18, i64* %size, align 8, !dbg !380
+  %19 = load i8* %prev_alloc, align 1, !dbg !381
+  %20 = trunc i8 %19 to i1, !dbg !381
+  br i1 %20, label %21, label %27, !dbg !381
+
+; <label>:21                                      ; preds = %0
+  %22 = load i8* %next_alloc, align 1, !dbg !381
+  %23 = trunc i8 %22 to i1, !dbg !381
+  br i1 %23, label %24, label %27, !dbg !381
+
+; <label>:24                                      ; preds = %21
+  %25 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str29, i32 0, i32 0)), !dbg !383
+  %26 = load %struct.block** %2, align 8, !dbg !385
+  store %struct.block* %26, %struct.block** %1, !dbg !385
+  br label %100, !dbg !385
+
+; <label>:27                                      ; preds = %21, %0
+  %28 = load i8* %prev_alloc, align 1, !dbg !386
+  %29 = trunc i8 %28 to i1, !dbg !386
+  br i1 %29, label %30, label %50, !dbg !386
+
+; <label>:30                                      ; preds = %27
+  %31 = load i8* %next_alloc, align 1, !dbg !386
+  %32 = trunc i8 %31 to i1, !dbg !386
+  br i1 %32, label %50, label %33, !dbg !386
+
+; <label>:33                                      ; preds = %30
+  %34 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str30, i32 0, i32 0)), !dbg !388
+  %35 = load %struct.block** %2, align 8, !dbg !390
+  call void @pop_from_freel(%struct.block* %35), !dbg !390
+  %36 = load %struct.block** %block_next, align 8, !dbg !391
+  call void @pop_from_freel(%struct.block* %36), !dbg !391
+  %37 = load %struct.block** %block_next, align 8, !dbg !392
+  %38 = call i64 @get_size(%struct.block* %37), !dbg !392
+  %39 = load i64* %size, align 8, !dbg !392
+  %40 = add i64 %39, %38, !dbg !392
+  store i64 %40, i64* %size, align 8, !dbg !392
+  %41 = load %struct.block** %2, align 8, !dbg !393
+  %42 = load i64* %size, align 8, !dbg !393
+  call void @pack_block(%struct.block* %41, i64 %42, i1 zeroext false), !dbg !393
+  %43 = load %struct.block** %2, align 8, !dbg !394
+  call void @push_to_freel(%struct.block* %43), !dbg !394
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_next_pp}, metadata !395), !dbg !396
+  %44 = load %struct.block** %block_next, align 8, !dbg !396
+  %45 = call %struct.block** @get_prevp(%struct.block* %44), !dbg !396
+  store %struct.block** %45, %struct.block*** %block_next_pp, align 8, !dbg !396
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_next_np}, metadata !397), !dbg !398
+  %46 = load %struct.block** %block_next, align 8, !dbg !398
+  %47 = call %struct.block** @get_nextp(%struct.block* %46), !dbg !398
+  store %struct.block** %47, %struct.block*** %block_next_np, align 8, !dbg !398
+  %48 = load %struct.block*** %block_next_pp, align 8, !dbg !399
+  store %struct.block* null, %struct.block** %48, align 8, !dbg !399
+  %49 = load %struct.block*** %block_next_np, align 8, !dbg !400
+  store %struct.block* null, %struct.block** %49, align 8, !dbg !400
+  br label %97, !dbg !401
+
+; <label>:50                                      ; preds = %30, %27
+  %51 = load i8* %prev_alloc, align 1, !dbg !402
+  %52 = trunc i8 %51 to i1, !dbg !402
+  br i1 %52, label %72, label %53, !dbg !402
+
+; <label>:53                                      ; preds = %50
+  %54 = load i8* %next_alloc, align 1, !dbg !402
+  %55 = trunc i8 %54 to i1, !dbg !402
+  br i1 %55, label %56, label %72, !dbg !402
+
+; <label>:56                                      ; preds = %53
+  %57 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str31, i32 0, i32 0)), !dbg !404
+  %58 = load %struct.block** %2, align 8, !dbg !406
+  call void @pop_from_freel(%struct.block* %58), !dbg !406
+  %59 = load %struct.block** %block_prev, align 8, !dbg !407
+  call void @pop_from_freel(%struct.block* %59), !dbg !407
+  %60 = load %struct.block** %block_prev, align 8, !dbg !408
+  %61 = call i64 @get_size(%struct.block* %60), !dbg !408
+  %62 = load i64* %size, align 8, !dbg !408
+  %63 = add i64 %62, %61, !dbg !408
+  store i64 %63, i64* %size, align 8, !dbg !408
+  %64 = load %struct.block** %block_prev, align 8, !dbg !409
+  %65 = load i64* %size, align 8, !dbg !409
+  call void @pack_block(%struct.block* %64, i64 %65, i1 zeroext false), !dbg !409
+  %66 = load %struct.block** %block_prev, align 8, !dbg !410
+  call void @push_to_freel(%struct.block* %66), !dbg !410
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_pp}, metadata !411), !dbg !412
+  %67 = load %struct.block** %2, align 8, !dbg !412
+  %68 = call %struct.block** @get_prevp(%struct.block* %67), !dbg !412
+  store %struct.block** %68, %struct.block*** %block_pp, align 8, !dbg !412
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_np}, metadata !413), !dbg !414
+  %69 = load %struct.block** %2, align 8, !dbg !414
+  %70 = call %struct.block** @get_nextp(%struct.block* %69), !dbg !414
+  store %struct.block** %70, %struct.block*** %block_np, align 8, !dbg !414
+  store %struct.block** null, %struct.block*** %block_pp, align 8, !dbg !415
+  store %struct.block** null, %struct.block*** %block_np, align 8, !dbg !416
+  %71 = load %struct.block** %block_prev, align 8, !dbg !417
+  store %struct.block* %71, %struct.block** %2, align 8, !dbg !417
+  br label %96, !dbg !418
+
+; <label>:72                                      ; preds = %53, %50
+  %73 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str32, i32 0, i32 0)), !dbg !419
+  %74 = load %struct.block** %2, align 8, !dbg !421
+  call void @pop_from_freel(%struct.block* %74), !dbg !421
+  %75 = load %struct.block** %block_prev, align 8, !dbg !422
+  call void @pop_from_freel(%struct.block* %75), !dbg !422
+  %76 = load %struct.block** %block_next, align 8, !dbg !423
+  call void @pop_from_freel(%struct.block* %76), !dbg !423
+  %77 = load %struct.block** %block_next, align 8, !dbg !424
+  %78 = call i64 @get_size(%struct.block* %77), !dbg !424
+  %79 = load %struct.block** %block_prev, align 8, !dbg !424
+  %80 = call i64 @get_size(%struct.block* %79), !dbg !424
+  %81 = add i64 %78, %80, !dbg !424
+  %82 = load i64* %size, align 8, !dbg !424
+  %83 = add i64 %82, %81, !dbg !424
+  store i64 %83, i64* %size, align 8, !dbg !424
+  %84 = load %struct.block** %block_prev, align 8, !dbg !425
+  %85 = load i64* %size, align 8, !dbg !425
+  call void @pack_block(%struct.block* %84, i64 %85, i1 zeroext false), !dbg !425
+  %86 = load %struct.block** %block_prev, align 8, !dbg !426
+  call void @push_to_freel(%struct.block* %86), !dbg !426
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_pp1}, metadata !427), !dbg !428
+  %87 = load %struct.block** %2, align 8, !dbg !428
+  %88 = call %struct.block** @get_prevp(%struct.block* %87), !dbg !428
+  store %struct.block** %88, %struct.block*** %block_pp1, align 8, !dbg !428
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_np2}, metadata !429), !dbg !430
+  %89 = load %struct.block** %2, align 8, !dbg !430
+  %90 = call %struct.block** @get_nextp(%struct.block* %89), !dbg !430
+  store %struct.block** %90, %struct.block*** %block_np2, align 8, !dbg !430
+  store %struct.block** null, %struct.block*** %block_pp1, align 8, !dbg !431
+  store %struct.block** null, %struct.block*** %block_np2, align 8, !dbg !432
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_next_pp3}, metadata !433), !dbg !434
+  %91 = load %struct.block** %block_next, align 8, !dbg !434
+  %92 = call %struct.block** @get_prevp(%struct.block* %91), !dbg !434
+  store %struct.block** %92, %struct.block*** %block_next_pp3, align 8, !dbg !434
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_next_np4}, metadata !435), !dbg !436
+  %93 = load %struct.block** %block_next, align 8, !dbg !436
+  %94 = call %struct.block** @get_nextp(%struct.block* %93), !dbg !436
+  store %struct.block** %94, %struct.block*** %block_next_np4, align 8, !dbg !436
+  store %struct.block** null, %struct.block*** %block_next_pp3, align 8, !dbg !437
+  store %struct.block** null, %struct.block*** %block_next_np4, align 8, !dbg !438
+  %95 = load %struct.block** %block_prev, align 8, !dbg !439
+  store %struct.block* %95, %struct.block** %2, align 8, !dbg !439
+  br label %96
+
+; <label>:96                                      ; preds = %72, %56
+  br label %97
+
+; <label>:97                                      ; preds = %96, %33
+  br label %98
+
+; <label>:98                                      ; preds = %97
+  %99 = load %struct.block** %2, align 8, !dbg !440
+  store %struct.block* %99, %struct.block** %1, !dbg !440
+  br label %100, !dbg !440
+
+; <label>:100                                     ; preds = %98, %24
+  %101 = load %struct.block** %1, !dbg !441
+  ret %struct.block* %101, !dbg !441
+}
+
+; Function Attrs: nounwind uwtable
+define i8* @mm_realloc(i8* %oldptr, i64 %size) #0 {
+  %1 = alloca i8*, align 8
+  %2 = alloca i8*, align 8
+  %3 = alloca i64, align 8
+  %block = alloca %struct.block*, align 8
+  %copysize = alloca i64, align 8
+  %newptr = alloca i8*, align 8
+  store i8* %oldptr, i8** %2, align 8
+  call void @llvm.dbg.declare(metadata !{i8** %2}, metadata !442), !dbg !443
+  store i64 %size, i64* %3, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %3}, metadata !444), !dbg !443
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block}, metadata !445), !dbg !446
+  %4 = load i8** %2, align 8, !dbg !446
+  %5 = call %struct.block* @payload_to_header(i8* %4), !dbg !446
+  store %struct.block* %5, %struct.block** %block, align 8, !dbg !446
+  call void @llvm.dbg.declare(metadata !{i64* %copysize}, metadata !447), !dbg !448
+  call void @llvm.dbg.declare(metadata !{i8** %newptr}, metadata !449), !dbg !450
+  %6 = load i64* %3, align 8, !dbg !451
+  %7 = icmp eq i64 %6, 0, !dbg !451
+  br i1 %7, label %8, label %10, !dbg !451
+
+; <label>:8                                       ; preds = %0
+  %9 = load i8** %2, align 8, !dbg !453
+  call void @mm_free(i8* %9), !dbg !453
+  store i8* null, i8** %1, !dbg !455
+  br label %37, !dbg !455
+
+; <label>:10                                      ; preds = %0
+  %11 = load i8** %2, align 8, !dbg !456
+  %12 = icmp eq i8* %11, null, !dbg !456
+  br i1 %12, label %13, label %16, !dbg !456
+
+; <label>:13                                      ; preds = %10
+  %14 = load i64* %3, align 8, !dbg !458
+  %15 = call i8* @mm_malloc(i64 %14), !dbg !458
+  store i8* %15, i8** %1, !dbg !458
+  br label %37, !dbg !458
+
+; <label>:16                                      ; preds = %10
+  %17 = load i64* %3, align 8, !dbg !460
+  %18 = call i8* @mm_malloc(i64 %17), !dbg !460
+  store i8* %18, i8** %newptr, align 8, !dbg !460
+  %19 = load i8** %newptr, align 8, !dbg !461
+  %20 = icmp ne i8* %19, null, !dbg !461
+  br i1 %20, label %22, label %21, !dbg !461
+
+; <label>:21                                      ; preds = %16
+  store i8* null, i8** %1, !dbg !463
+  br label %37, !dbg !463
+
+; <label>:22                                      ; preds = %16
+  %23 = load %struct.block** %block, align 8, !dbg !465
+  %24 = call i64 @get_payload_size(%struct.block* %23), !dbg !465
+  store i64 %24, i64* %copysize, align 8, !dbg !465
+  %25 = load i64* %3, align 8, !dbg !466
+  %26 = load i64* %copysize, align 8, !dbg !466
+  %27 = icmp ult i64 %25, %26, !dbg !466
+  br i1 %27, label %28, label %30, !dbg !466
+
+; <label>:28                                      ; preds = %22
+  %29 = load i64* %3, align 8, !dbg !468
+  store i64 %29, i64* %copysize, align 8, !dbg !468
+  br label %30, !dbg !470
+
+; <label>:30                                      ; preds = %28, %22
+  %31 = load i8** %newptr, align 8, !dbg !471
+  %32 = load i8** %2, align 8, !dbg !471
+  %33 = load i64* %copysize, align 8, !dbg !471
+  %34 = call i8* @mem_memcpy(i8* %31, i8* %32, i64 %33), !dbg !471
+  %35 = load i8** %2, align 8, !dbg !472
+  call void @mm_free(i8* %35), !dbg !472
+  %36 = load i8** %newptr, align 8, !dbg !473
+  store i8* %36, i8** %1, !dbg !473
+  br label %37, !dbg !473
+
+; <label>:37                                      ; preds = %30, %21, %13, %8
+  %38 = load i8** %1, !dbg !474
+  ret i8* %38, !dbg !474
+}
+
+; Function Attrs: nounwind uwtable
+define internal i64 @get_payload_size(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %asize = alloca i64, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !475), !dbg !476
+  call void @llvm.dbg.declare(metadata !{i64* %asize}, metadata !477), !dbg !478
+  %2 = load %struct.block** %1, align 8, !dbg !478
+  %3 = call i64 @get_size(%struct.block* %2), !dbg !478
+  store i64 %3, i64* %asize, align 8, !dbg !478
+  %4 = load i64* %asize, align 8, !dbg !479
+  %5 = sub i64 %4, 16, !dbg !479
+  ret i64 %5, !dbg !479
+}
+
+declare i8* @mem_memcpy(i8*, i8*, i64) #1
+
+; Function Attrs: nounwind uwtable
+define i8* @mm_calloc(i64 %nmemb, i64 %size) #0 {
+  %1 = alloca i8*, align 8
+  %2 = alloca i64, align 8
+  %3 = alloca i64, align 8
+  %bp = alloca i8*, align 8
+  %asize = alloca i64, align 8
+  store i64 %nmemb, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !480), !dbg !481
+  store i64 %size, i64* %3, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %3}, metadata !482), !dbg !481
+  call void @llvm.dbg.declare(metadata !{i8** %bp}, metadata !483), !dbg !484
+  call void @llvm.dbg.declare(metadata !{i64* %asize}, metadata !485), !dbg !486
+  %4 = load i64* %2, align 8, !dbg !486
+  %5 = load i64* %3, align 8, !dbg !486
+  %6 = mul i64 %4, %5, !dbg !486
+  store i64 %6, i64* %asize, align 8, !dbg !486
+  %7 = load i64* %asize, align 8, !dbg !487
+  %8 = load i64* %2, align 8, !dbg !487
+  %9 = udiv i64 %7, %8, !dbg !487
+  %10 = load i64* %3, align 8, !dbg !487
+  %11 = icmp ne i64 %9, %10, !dbg !487
+  br i1 %11, label %12, label %13, !dbg !487
+
+; <label>:12                                      ; preds = %0
+  store i8* null, i8** %1, !dbg !489
+  br label %24, !dbg !489
+
+; <label>:13                                      ; preds = %0
+  %14 = load i64* %asize, align 8, !dbg !490
+  %15 = call i8* @mm_malloc(i64 %14), !dbg !490
+  store i8* %15, i8** %bp, align 8, !dbg !490
+  %16 = load i8** %bp, align 8, !dbg !491
+  %17 = icmp eq i8* %16, null, !dbg !491
+  br i1 %17, label %18, label %19, !dbg !491
+
+; <label>:18                                      ; preds = %13
+  store i8* null, i8** %1, !dbg !493
+  br label %24, !dbg !493
+
+; <label>:19                                      ; preds = %13
+  %20 = load i8** %bp, align 8, !dbg !495
+  %21 = load i64* %asize, align 8, !dbg !495
+  %22 = call i8* @mem_memset(i8* %20, i32 0, i64 %21), !dbg !495
+  %23 = load i8** %bp, align 8, !dbg !496
+  store i8* %23, i8** %1, !dbg !496
+  br label %24, !dbg !496
+
+; <label>:24                                      ; preds = %19, %18, %12
+  %25 = load i8** %1, !dbg !497
+  ret i8* %25, !dbg !497
+}
+
+declare i8* @mem_memset(i8*, i32, i64) #1
+
+; Function Attrs: nounwind uwtable
+define %struct.block** @get_prevp(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !498), !dbg !499
+  %2 = load %struct.block** %1, align 8, !dbg !500
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 1, !dbg !500
+  %4 = getelementptr inbounds [0 x i8]* %3, i32 0, i32 0, !dbg !500
+  %5 = bitcast i8* %4 to %struct.block**, !dbg !500
+  ret %struct.block** %5, !dbg !500
+}
+
+; Function Attrs: nounwind uwtable
+define %struct.block** @get_nextp(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !501), !dbg !502
+  %2 = load %struct.block** %1, align 8, !dbg !503
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 1, !dbg !503
+  %4 = getelementptr inbounds [0 x i8]* %3, i32 0, i32 0, !dbg !503
+  %5 = bitcast i8* %4 to %struct.block**, !dbg !503
+  %6 = getelementptr inbounds %struct.block** %5, i64 8, !dbg !503
+  ret %struct.block** %6, !dbg !503
+}
+
+; Function Attrs: nounwind uwtable
+define void @pop_from_freel(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %block_pp_np = alloca %struct.block**, align 8
+  %block_np_pp = alloca %struct.block**, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !504), !dbg !505
+  %2 = load %struct.block** %1, align 8, !dbg !506
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str7, i32 0, i32 0), %struct.block* %2), !dbg !506
+  %4 = load %struct.block** @free_listp, align 8, !dbg !507
+  %5 = load %struct.block** %1, align 8, !dbg !507
+  %6 = icmp eq %struct.block* %4, %5, !dbg !507
+  br i1 %6, label %7, label %18, !dbg !507
+
+; <label>:7                                       ; preds = %0
+  %8 = load %struct.block** %1, align 8, !dbg !509
+  %9 = call %struct.block** @get_nextp(%struct.block* %8), !dbg !509
+  %10 = load %struct.block** %9, align 8, !dbg !509
+  %11 = icmp ne %struct.block* %10, null, !dbg !509
+  br i1 %11, label %12, label %16, !dbg !509
+
+; <label>:12                                      ; preds = %7
+  %13 = load %struct.block** %1, align 8, !dbg !509
+  %14 = call %struct.block** @get_nextp(%struct.block* %13), !dbg !509
+  %15 = load %struct.block** %14, align 8, !dbg !509
+  store %struct.block* %15, %struct.block** @free_listp, align 8, !dbg !509
+  br label %17, !dbg !509
+
+; <label>:16                                      ; preds = %7
+  store %struct.block* null, %struct.block** @free_listp, align 8, !dbg !512
+  br label %17
+
+; <label>:17                                      ; preds = %16, %12
+  br label %39, !dbg !513
+
+; <label>:18                                      ; preds = %0
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_pp_np}, metadata !514), !dbg !516
+  %19 = load %struct.block** %1, align 8, !dbg !516
+  %20 = call %struct.block** @get_prevp(%struct.block* %19), !dbg !516
+  %21 = load %struct.block** %20, align 8, !dbg !516
+  %22 = call %struct.block** @get_nextp(%struct.block* %21), !dbg !516
+  store %struct.block** %22, %struct.block*** %block_pp_np, align 8, !dbg !516
+  %23 = load %struct.block** %1, align 8, !dbg !517
+  %24 = call %struct.block** @get_nextp(%struct.block* %23), !dbg !517
+  %25 = load %struct.block** %24, align 8, !dbg !517
+  %26 = load %struct.block*** %block_pp_np, align 8, !dbg !517
+  store %struct.block* %25, %struct.block** %26, align 8, !dbg !517
+  %27 = load %struct.block** %1, align 8, !dbg !518
+  %28 = call %struct.block** @get_nextp(%struct.block* %27), !dbg !518
+  %29 = load %struct.block** %28, align 8, !dbg !518
+  %30 = icmp ne %struct.block* %29, null, !dbg !518
+  br i1 %30, label %31, label %38, !dbg !518
+
+; <label>:31                                      ; preds = %18
+  call void @llvm.dbg.declare(metadata !{%struct.block*** %block_np_pp}, metadata !520), !dbg !522
+  %32 = load %struct.block** %1, align 8, !dbg !522
+  %33 = call %struct.block** @get_nextp(%struct.block* %32), !dbg !522
+  %34 = load %struct.block** %33, align 8, !dbg !522
+  %35 = call %struct.block** @get_prevp(%struct.block* %34), !dbg !522
+  store %struct.block** %35, %struct.block*** %block_np_pp, align 8, !dbg !522
+  %36 = load %struct.block** %1, align 8, !dbg !523
+  %37 = call %struct.block** @get_prevp(%struct.block* %36), !dbg !523
+  store %struct.block** %37, %struct.block*** %block_np_pp, align 8, !dbg !523
+  br label %38, !dbg !524
+
+; <label>:38                                      ; preds = %31, %18
+  br label %39
+
+; <label>:39                                      ; preds = %38, %17
+  ret void, !dbg !525
+}
+
+; Function Attrs: nounwind uwtable
+define internal void @write_header(%struct.block* %block, i64 %size, i1 zeroext %alloc) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %3 = alloca i8, align 1
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !526), !dbg !527
+  store i64 %size, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !528), !dbg !527
+  %4 = zext i1 %alloc to i8
+  store i8 %4, i8* %3, align 1
+  call void @llvm.dbg.declare(metadata !{i8* %3}, metadata !529), !dbg !527
+  %5 = load i64* %2, align 8, !dbg !530
+  %6 = load i8* %3, align 1, !dbg !530
+  %7 = trunc i8 %6 to i1, !dbg !530
+  %8 = call i64 @pack(i64 %5, i1 zeroext %7), !dbg !530
+  %9 = load %struct.block** %1, align 8, !dbg !530
+  %10 = getelementptr inbounds %struct.block* %9, i32 0, i32 0, !dbg !530
+  store i64 %8, i64* %10, align 8, !dbg !530
+  ret void, !dbg !531
+}
+
+; Function Attrs: nounwind uwtable
+define internal void @write_footer(%struct.block* %block, i64 %size, i1 zeroext %alloc) #0 {
+  %1 = alloca %struct.block*, align 8
+  %2 = alloca i64, align 8
+  %3 = alloca i8, align 1
+  %footerp = alloca i64*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !532), !dbg !533
+  store i64 %size, i64* %2, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %2}, metadata !534), !dbg !533
+  %4 = zext i1 %alloc to i8
+  store i8 %4, i8* %3, align 1
+  call void @llvm.dbg.declare(metadata !{i8* %3}, metadata !535), !dbg !533
+  call void @llvm.dbg.declare(metadata !{i64** %footerp}, metadata !536), !dbg !537
+  %5 = load %struct.block** %1, align 8, !dbg !537
+  %6 = getelementptr inbounds %struct.block* %5, i32 0, i32 1, !dbg !537
+  %7 = getelementptr inbounds [0 x i8]* %6, i32 0, i32 0, !dbg !537
+  %8 = load %struct.block** %1, align 8, !dbg !537
+  %9 = call i64 @get_size(%struct.block* %8), !dbg !537
+  %10 = getelementptr inbounds i8* %7, i64 %9, !dbg !537
+  %11 = getelementptr inbounds i8* %10, i64 -16, !dbg !537
+  %12 = bitcast i8* %11 to i64*, !dbg !537
+  store i64* %12, i64** %footerp, align 8, !dbg !537
+  %13 = load i64* %2, align 8, !dbg !538
+  %14 = load i8* %3, align 1, !dbg !538
+  %15 = trunc i8 %14 to i1, !dbg !538
+  %16 = call i64 @pack(i64 %13, i1 zeroext %15), !dbg !538
+  %17 = load i64** %footerp, align 8, !dbg !538
+  store i64 %16, i64* %17, align 8, !dbg !538
+  ret void, !dbg !539
+}
+
+; Function Attrs: nounwind uwtable
+define zeroext i1 @mm_checkblock(%struct.block* %block) #0 {
+  %1 = alloca i1, align 1
+  %2 = alloca %struct.block*, align 8
+  %fp = alloca i64*, align 8
+  %nb = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %2, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %2}, metadata !540), !dbg !541
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str8, i32 0, i32 0)), !dbg !542
+  call void @llvm.dbg.declare(metadata !{i64** %fp}, metadata !543), !dbg !544
+  %4 = load %struct.block** %2, align 8, !dbg !544
+  %5 = getelementptr inbounds %struct.block* %4, i32 0, i32 1, !dbg !544
+  %6 = getelementptr inbounds [0 x i8]* %5, i32 0, i32 0, !dbg !544
+  %7 = load %struct.block** %2, align 8, !dbg !544
+  %8 = call i64 @get_size(%struct.block* %7), !dbg !544
+  %9 = getelementptr inbounds i8* %6, i64 %8, !dbg !544
+  %10 = getelementptr inbounds i8* %9, i64 -16, !dbg !544
+  %11 = bitcast i8* %10 to i64*, !dbg !544
+  store i64* %11, i64** %fp, align 8, !dbg !544
+  %12 = load %struct.block** %2, align 8, !dbg !545
+  %13 = bitcast %struct.block* %12 to i8*, !dbg !545
+  %14 = call zeroext i1 @aligned(i8* %13), !dbg !545
+  br i1 %14, label %15, label %18, !dbg !545
+
+; <label>:15                                      ; preds = %0
+  %16 = load %struct.block** %2, align 8, !dbg !547
+  %17 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([47 x i8]* @.str9, i32 0, i32 0), %struct.block* %16), !dbg !547
+  store i1 false, i1* %1, !dbg !549
+  br label %71, !dbg !549
+
+; <label>:18                                      ; preds = %0
+  %19 = load %struct.block** %2, align 8, !dbg !550
+  %20 = bitcast %struct.block* %19 to i8*, !dbg !550
+  %21 = call zeroext i1 @in_heap(i8* %20), !dbg !550
+  br i1 %21, label %25, label %22, !dbg !550
+
+; <label>:22                                      ; preds = %18
+  %23 = load %struct.block** %2, align 8, !dbg !552
+  %24 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str10, i32 0, i32 0), %struct.block* %23), !dbg !552
+  store i1 false, i1* %1, !dbg !554
+  br label %71, !dbg !554
+
+; <label>:25                                      ; preds = %18
+  %26 = load %struct.block** %2, align 8, !dbg !555
+  %27 = call i64 @get_size(%struct.block* %26), !dbg !555
+  %28 = load i64** %fp, align 8, !dbg !555
+  %29 = load i64* %28, align 8, !dbg !555
+  %30 = call i64 @extract_size(i64 %29), !dbg !555
+  %31 = icmp ne i64 %27, %30, !dbg !555
+  br i1 %31, label %32, label %35, !dbg !555
+
+; <label>:32                                      ; preds = %25
+  %33 = load %struct.block** %2, align 8, !dbg !557
+  %34 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([63 x i8]* @.str11, i32 0, i32 0), %struct.block* %33), !dbg !557
+  store i1 false, i1* %1, !dbg !559
+  br label %71, !dbg !559
+
+; <label>:35                                      ; preds = %25
+  %36 = load %struct.block** %2, align 8, !dbg !560
+  %37 = call zeroext i1 @get_alloc(%struct.block* %36), !dbg !560
+  %38 = zext i1 %37 to i32, !dbg !560
+  %39 = load i64** %fp, align 8, !dbg !560
+  %40 = load i64* %39, align 8, !dbg !560
+  %41 = call zeroext i1 @extract_alloc(i64 %40), !dbg !560
+  %42 = zext i1 %41 to i32, !dbg !560
+  %43 = icmp ne i32 %38, %42, !dbg !560
+  br i1 %43, label %44, label %47, !dbg !560
+
+; <label>:44                                      ; preds = %35
+  %45 = load %struct.block** %2, align 8, !dbg !562
+  %46 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([64 x i8]* @.str12, i32 0, i32 0), %struct.block* %45), !dbg !562
+  store i1 false, i1* %1, !dbg !564
+  br label %71, !dbg !564
+
+; <label>:47                                      ; preds = %35
+  br label %48
+
+; <label>:48                                      ; preds = %47
+  br label %49
+
+; <label>:49                                      ; preds = %48
+  br label %50
+
+; <label>:50                                      ; preds = %49
+  call void @llvm.dbg.declare(metadata !{%struct.block** %nb}, metadata !565), !dbg !566
+  %51 = load %struct.block** %2, align 8, !dbg !566
+  %52 = call %struct.block* @find_next(%struct.block* %51), !dbg !566
+  store %struct.block* %52, %struct.block** %nb, align 8, !dbg !566
+  %53 = load %struct.block** %nb, align 8, !dbg !567
+  %54 = call i64 @get_size(%struct.block* %53), !dbg !567
+  %55 = icmp ugt i64 %54, 0, !dbg !567
+  br i1 %55, label %56, label %70, !dbg !567
+
+; <label>:56                                      ; preds = %50
+  %57 = load %struct.block** %2, align 8, !dbg !567
+  %58 = call zeroext i1 @get_alloc(%struct.block* %57), !dbg !567
+  %59 = zext i1 %58 to i32, !dbg !567
+  %60 = icmp eq i32 %59, 0, !dbg !567
+  br i1 %60, label %61, label %70, !dbg !567
+
+; <label>:61                                      ; preds = %56
+  %62 = load %struct.block** %nb, align 8, !dbg !567
+  %63 = call zeroext i1 @get_alloc(%struct.block* %62), !dbg !567
+  %64 = zext i1 %63 to i32, !dbg !567
+  %65 = icmp eq i32 %64, 0, !dbg !567
+  br i1 %65, label %66, label %70, !dbg !567
+
+; <label>:66                                      ; preds = %61
+  %67 = load %struct.block** %2, align 8, !dbg !569
+  %68 = load %struct.block** %nb, align 8, !dbg !569
+  %69 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([61 x i8]* @.str13, i32 0, i32 0), %struct.block* %67, %struct.block* %68), !dbg !569
+  store i1 false, i1* %1, !dbg !571
+  br label %71, !dbg !571
+
+; <label>:70                                      ; preds = %61, %56, %50
+  store i1 true, i1* %1, !dbg !572
+  br label %71, !dbg !572
+
+; <label>:71                                      ; preds = %70, %66, %44, %32, %22, %15
+  %72 = load i1* %1, !dbg !573
+  ret i1 %72, !dbg !573
+}
+
+; Function Attrs: nounwind uwtable
+define internal zeroext i1 @aligned(i8* %p) #0 {
+  %1 = alloca i8*, align 8
+  %ip = alloca i64, align 8
+  store i8* %p, i8** %1, align 8
+  call void @llvm.dbg.declare(metadata !{i8** %1}, metadata !574), !dbg !575
+  call void @llvm.dbg.declare(metadata !{i64* %ip}, metadata !576), !dbg !577
+  %2 = load i8** %1, align 8, !dbg !577
+  %3 = ptrtoint i8* %2 to i64, !dbg !577
+  store i64 %3, i64* %ip, align 8, !dbg !577
+  %4 = load i64* %ip, align 8, !dbg !578
+  %5 = call i64 @align(i64 %4), !dbg !578
+  %6 = load i64* %ip, align 8, !dbg !578
+  %7 = icmp eq i64 %5, %6, !dbg !578
+  ret i1 %7, !dbg !578
+}
+
+; Function Attrs: nounwind uwtable
+define internal zeroext i1 @in_heap(i8* %p) #0 {
+  %1 = alloca i8*, align 8
+  store i8* %p, i8** %1, align 8
+  call void @llvm.dbg.declare(metadata !{i8** %1}, metadata !579), !dbg !580
+  %2 = load i8** %1, align 8, !dbg !581
+  %3 = call i8* @mem_heap_hi(), !dbg !581
+  %4 = icmp ule i8* %2, %3, !dbg !581
+  br i1 %4, label %5, label %9, !dbg !581
+
+; <label>:5                                       ; preds = %0
+  %6 = load i8** %1, align 8, !dbg !581
+  %7 = call i8* @mem_heap_lo(), !dbg !581
+  %8 = icmp uge i8* %6, %7, !dbg !581
+  br label %9
+
+; <label>:9                                       ; preds = %5, %0
+  %10 = phi i1 [ false, %0 ], [ %8, %5 ]
+  ret i1 %10, !dbg !582
+}
+
+; Function Attrs: nounwind uwtable
+define internal i64 @extract_size(i64 %word) #0 {
+  %1 = alloca i64, align 8
+  store i64 %word, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !583), !dbg !584
+  %2 = load i64* %1, align 8, !dbg !585
+  %3 = and i64 %2, -16, !dbg !585
+  ret i64 %3, !dbg !585
+}
+
+; Function Attrs: nounwind uwtable
+define internal zeroext i1 @get_alloc(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !586), !dbg !587
+  %2 = load %struct.block** %1, align 8, !dbg !588
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 0, !dbg !588
+  %4 = load i64* %3, align 8, !dbg !588
+  %5 = call zeroext i1 @extract_alloc(i64 %4), !dbg !588
+  ret i1 %5, !dbg !588
+}
+
+; Function Attrs: nounwind uwtable
+define internal zeroext i1 @extract_alloc(i64 %word) #0 {
+  %1 = alloca i64, align 8
+  store i64 %word, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !589), !dbg !590
+  %2 = load i64* %1, align 8, !dbg !591
+  %3 = and i64 %2, 1, !dbg !591
+  %4 = icmp ne i64 %3, 0, !dbg !591
+  ret i1 %4, !dbg !591
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @find_next(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %block_next = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !592), !dbg !593
+  %2 = load %struct.block** %1, align 8, !dbg !594
+  %3 = icmp ne %struct.block* %2, null, !dbg !594
+  br i1 %3, label %4, label %5, !dbg !594
+
+; <label>:4                                       ; preds = %0
+  br label %7, !dbg !594
+
+; <label>:5                                       ; preds = %0
+  call void @__assert_fail(i8* getelementptr inbounds ([20 x i8]* @.str24, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str2, i32 0, i32 0), i32 516, i8* getelementptr inbounds ([30 x i8]* @__PRETTY_FUNCTION__.find_next, i32 0, i32 0)) #4, !dbg !594
+  unreachable, !dbg !594
+                                                  ; No predecessors!
+  br label %7, !dbg !594
+
+; <label>:7                                       ; preds = %6, %4
+  call void @llvm.dbg.declare(metadata !{%struct.block** %block_next}, metadata !595), !dbg !596
+  %8 = load %struct.block** %1, align 8, !dbg !596
+  %9 = bitcast %struct.block* %8 to i8*, !dbg !596
+  %10 = load %struct.block** %1, align 8, !dbg !596
+  %11 = call i64 @get_size(%struct.block* %10), !dbg !596
+  %12 = getelementptr inbounds i8* %9, i64 %11, !dbg !596
+  %13 = bitcast i8* %12 to %struct.block*, !dbg !596
+  store %struct.block* %13, %struct.block** %block_next, align 8, !dbg !596
+  %14 = load %struct.block** %block_next, align 8, !dbg !597
+  %15 = icmp ne %struct.block* %14, null, !dbg !597
+  br i1 %15, label %16, label %17, !dbg !597
+
+; <label>:16                                      ; preds = %7
+  br label %19, !dbg !597
+
+; <label>:17                                      ; preds = %7
+  call void @__assert_fail(i8* getelementptr inbounds ([25 x i8]* @.str25, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str2, i32 0, i32 0), i32 519, i8* getelementptr inbounds ([30 x i8]* @__PRETTY_FUNCTION__.find_next, i32 0, i32 0)) #4, !dbg !597
+  unreachable, !dbg !597
+                                                  ; No predecessors!
+  br label %19, !dbg !597
+
+; <label>:19                                      ; preds = %18, %16
+  %20 = load %struct.block** %block_next, align 8, !dbg !598
+  ret %struct.block* %20, !dbg !598
+}
+
+; Function Attrs: nounwind uwtable
+define internal i64* @find_prev_footer(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !599), !dbg !600
+  %2 = load %struct.block** %1, align 8, !dbg !601
+  %3 = getelementptr inbounds %struct.block* %2, i32 0, i32 0, !dbg !601
+  %4 = getelementptr inbounds i64* %3, i64 -1, !dbg !601
+  ret i64* %4, !dbg !601
+}
+
+declare i8* @mem_heap_hi() #1
+
+declare i8* @mem_heap_lo() #1
+
+; Function Attrs: nounwind uwtable
+define internal i64 @align(i64 %x) #0 {
+  %1 = alloca i64, align 8
+  store i64 %x, i64* %1, align 8
+  call void @llvm.dbg.declare(metadata !{i64* %1}, metadata !602), !dbg !603
+  %2 = load i64* %1, align 8, !dbg !604
+  %3 = add i64 %2, 16, !dbg !604
+  %4 = sub i64 %3, 1, !dbg !604
+  %5 = udiv i64 %4, 16, !dbg !604
+  %6 = mul i64 16, %5, !dbg !604
+  ret i64 %6, !dbg !604
+}
+
+; Function Attrs: nounwind uwtable
+define internal %struct.block* @find_prev(%struct.block* %block) #0 {
+  %1 = alloca %struct.block*, align 8
+  %footerp = alloca i64*, align 8
+  %size = alloca i64, align 8
+  store %struct.block* %block, %struct.block** %1, align 8
+  call void @llvm.dbg.declare(metadata !{%struct.block** %1}, metadata !605), !dbg !606
+  call void @llvm.dbg.declare(metadata !{i64** %footerp}, metadata !607), !dbg !608
+  %2 = load %struct.block** %1, align 8, !dbg !608
+  %3 = call i64* @find_prev_footer(%struct.block* %2), !dbg !608
+  store i64* %3, i64** %footerp, align 8, !dbg !608
+  call void @llvm.dbg.declare(metadata !{i64* %size}, metadata !609), !dbg !610
+  %4 = load i64** %footerp, align 8, !dbg !610
+  %5 = load i64* %4, align 8, !dbg !610
+  %6 = call i64 @extract_size(i64 %5), !dbg !610
+  store i64 %6, i64* %size, align 8, !dbg !610
+  %7 = load %struct.block** %1, align 8, !dbg !611
+  %8 = bitcast %struct.block* %7 to i8*, !dbg !611
+  %9 = load i64* %size, align 8, !dbg !611
+  %10 = sub i64 0, %9, !dbg !611
+  %11 = getelementptr inbounds i8* %8, i64 %10, !dbg !611
+  %12 = bitcast i8* %11 to %struct.block*, !dbg !611
+  ret %struct.block* %12, !dbg !611
+}
+
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind readnone }
+attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { noreturn nounwind }
+
+!llvm.dbg.cu = !{!0}
+!llvm.module.flags = !{!117, !118}
+!llvm.ident = !{!119}
+
+!0 = metadata !{i32 786449, metadata !1, i32 12, metadata !"clang version 3.4.2 (tags/RELEASE_34/dot2-final)", i1 false, metadata !"", i32 0, metadata !2, metadata !2, metadata !3, metadata !106, metadata !2, metadata !""} ; [ DW_TAG_compile_unit ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c] [DW_LANG_C99]
+!1 = metadata !{metadata !"mm.c", metadata !"/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout"}
+!2 = metadata !{i32 0}
+!3 = metadata !{metadata !4, metadata !9, metadata !15, metadata !18, metadata !21, metadata !24, metadata !40, metadata !41, metadata !44, metadata !45, metadata !48, metadata !51, metadata !55, metadata !59, metadata !62, metadata !65, metadata !66, metadata !69, metadata !74, metadata !75, metadata !78, metadata !79, metadata !80, metadata !83, metadata !86, metadata !89, metadata !90, metadata !93, metadata !96, metadata !97, metadata !100, metadata !103, metadata !104, metadata !105}
+!4 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_init", metadata !"mm_init", metadata !"", i32 131, metadata !6, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 ()* @mm_init, null, null, metadata !2, i32 131} ; [ DW_TAG_subprogram ] [line 131] [def] [mm_init]
+!5 = metadata !{i32 786473, metadata !1}          ; [ DW_TAG_file_type ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!6 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !7, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!7 = metadata !{metadata !8}
+!8 = metadata !{i32 786468, null, null, metadata !"_Bool", i32 0, i64 8, i64 8, i64 0, i32 0, i32 2} ; [ DW_TAG_base_type ] [_Bool] [line 0, size 8, align 8, offset 0, enc DW_ATE_boolean]
+!9 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_malloc", metadata !"mm_malloc", metadata !"", i32 156, metadata !10, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i8* (i64)* @mm_malloc, null, null, metadata !2, i32 156} ; [ DW_TAG_subprogram ] [line 156] [def] [mm_malloc]
+!10 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !11, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!11 = metadata !{metadata !12, metadata !13}
+!12 = metadata !{i32 786447, null, null, metadata !"", i32 0, i64 64, i64 64, i64 0, i32 0, null} ; [ DW_TAG_pointer_type ] [line 0, size 64, align 64, offset 0] [from ]
+!13 = metadata !{i32 786454, metadata !1, null, metadata !"size_t", i32 42, i64 0, i64 0, i64 0, i32 0, metadata !14} ; [ DW_TAG_typedef ] [size_t] [line 42, size 0, align 0, offset 0] [from long unsigned int]
+!14 = metadata !{i32 786468, null, null, metadata !"long unsigned int", i32 0, i64 64, i64 64, i64 0, i32 0, i32 7} ; [ DW_TAG_base_type ] [long unsigned int] [line 0, size 64, align 64, offset 0, enc DW_ATE_unsigned]
+!15 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_free", metadata !"mm_free", metadata !"", i32 203, metadata !16, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (i8*)* @mm_free, null, null, metadata !2, i32 203} ; [ DW_TAG_subprogram ] [line 203] [def] [mm_free]
+!16 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !17, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!17 = metadata !{null, metadata !12}
+!18 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_realloc", metadata !"mm_realloc", metadata !"", i32 220, metadata !19, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i8* (i8*, i64)* @mm_realloc, null, null, metadata !2, i32 220} ; [ DW_TAG_subprogram ] [line 220] [def] [mm_realloc]
+!19 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !20, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!20 = metadata !{metadata !12, metadata !12, metadata !13}
+!21 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_calloc", metadata !"mm_calloc", metadata !"", i32 260, metadata !22, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i8* (i64, i64)* @mm_calloc, null, null, metadata !2, i32 260} ; [ DW_TAG_subprogram ] [line 260] [def] [mm_calloc]
+!22 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !23, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!23 = metadata !{metadata !12, metadata !13, metadata !13}
+!24 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"get_prevp", metadata !"get_prevp", metadata !"", i32 584, metadata !25, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block** (%struct.block*)* @get_prevp, null, null, metadata !2, i32 584} ; [ DW_TAG_subprogram ] [line 584] [def] [get_prevp]
+!25 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !26, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!26 = metadata !{metadata !27, metadata !28}
+!27 = metadata !{i32 786447, null, null, metadata !"", i32 0, i64 64, i64 64, i64 0, i32 0, metadata !28} ; [ DW_TAG_pointer_type ] [line 0, size 64, align 64, offset 0] [from ]
+!28 = metadata !{i32 786447, null, null, metadata !"", i32 0, i64 64, i64 64, i64 0, i32 0, metadata !29} ; [ DW_TAG_pointer_type ] [line 0, size 64, align 64, offset 0] [from block_t]
+!29 = metadata !{i32 786454, metadata !1, null, metadata !"block_t", i32 83, i64 0, i64 0, i64 0, i32 0, metadata !30} ; [ DW_TAG_typedef ] [block_t] [line 83, size 0, align 0, offset 0] [from block]
+!30 = metadata !{i32 786451, metadata !1, null, metadata !"block", i32 67, i64 64, i64 64, i32 0, i32 0, null, metadata !31, i32 0, null, null, null} ; [ DW_TAG_structure_type ] [block] [line 67, size 64, align 64, offset 0] [def] [from ]
+!31 = metadata !{metadata !32, metadata !35}
+!32 = metadata !{i32 786445, metadata !1, metadata !30, metadata !"header", i32 70, i64 64, i64 64, i64 0, i32 0, metadata !33} ; [ DW_TAG_member ] [header] [line 70, size 64, align 64, offset 0] [from word_t]
+!33 = metadata !{i32 786454, metadata !1, null, metadata !"word_t", i32 58, i64 0, i64 0, i64 0, i32 0, metadata !34} ; [ DW_TAG_typedef ] [word_t] [line 58, size 0, align 0, offset 0] [from uint64_t]
+!34 = metadata !{i32 786454, metadata !1, null, metadata !"uint64_t", i32 56, i64 0, i64 0, i64 0, i32 0, metadata !14} ; [ DW_TAG_typedef ] [uint64_t] [line 56, size 0, align 0, offset 0] [from long unsigned int]
+!35 = metadata !{i32 786445, metadata !1, metadata !30, metadata !"payload", i32 77, i64 0, i64 8, i64 64, i32 0, metadata !36} ; [ DW_TAG_member ] [payload] [line 77, size 0, align 8, offset 64] [from ]
+!36 = metadata !{i32 786433, null, null, metadata !"", i32 0, i64 0, i64 8, i32 0, i32 0, metadata !37, metadata !38, i32 0, null, null, null} ; [ DW_TAG_array_type ] [line 0, size 0, align 8, offset 0] [from char]
+!37 = metadata !{i32 786468, null, null, metadata !"char", i32 0, i64 8, i64 8, i64 0, i32 0, i32 6} ; [ DW_TAG_base_type ] [char] [line 0, size 8, align 8, offset 0, enc DW_ATE_signed_char]
+!38 = metadata !{metadata !39}
+!39 = metadata !{i32 786465, i64 0, i64 0}        ; [ DW_TAG_subrange_type ] [0, -1]
+!40 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"get_nextp", metadata !"get_nextp", metadata !"", i32 588, metadata !25, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block** (%struct.block*)* @get_nextp, null, null, metadata !2, i32 588} ; [ DW_TAG_subprogram ] [line 588] [def] [get_nextp]
+!41 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"push_to_freel", metadata !"push_to_freel", metadata !"", i32 592, metadata !42, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*)* @push_to_freel, null, null, metadata !2, i32 592} ; [ DW_TAG_subprogram ] [line 592] [def] [push_to_freel]
+!42 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !43, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!43 = metadata !{null, metadata !28}
+!44 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"pop_from_freel", metadata !"pop_from_freel", metadata !"", i32 608, metadata !42, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*)* @pop_from_freel, null, null, metadata !2, i32 608} ; [ DW_TAG_subprogram ] [line 608] [def] [pop_from_freel]
+!45 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"pack_block", metadata !"pack_block", metadata !"", i32 626, metadata !46, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*, i64, i1)* @pack_block, null, null, metadata !2, i32 626} ; [ DW_TAG_subprogram ] [line 626] [def] [pack_block]
+!46 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !47, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!47 = metadata !{null, metadata !28, metadata !13, metadata !8}
+!48 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_checkblock", metadata !"mm_checkblock", metadata !"", i32 631, metadata !49, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (%struct.block*)* @mm_checkblock, null, null, metadata !2, i32 631} ; [ DW_TAG_subprogram ] [line 631] [def] [mm_checkblock]
+!49 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !50, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!50 = metadata !{metadata !8, metadata !28}
+!51 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"mm_checkheap", metadata !"mm_checkheap", metadata !"", i32 664, metadata !52, i1 false, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (i32)* @mm_checkheap, null, null, metadata !2, i32 664} ; [ DW_TAG_subprogram ] [line 664] [def] [mm_checkheap]
+!52 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !53, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!53 = metadata !{metadata !8, metadata !54}
+!54 = metadata !{i32 786468, null, null, metadata !"int", i32 0, i64 32, i64 32, i64 0, i32 0, i32 5} ; [ DW_TAG_base_type ] [int] [line 0, size 32, align 32, offset 0, enc DW_ATE_signed]
+!55 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"find_prev_footer", metadata !"find_prev_footer", metadata !"", i32 526, metadata !56, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64* (%struct.block*)* @find_prev_footer, null, null, metadata !2, i32 527} ; [ DW_TAG_subprogram ] [line 526] [local] [def] [scope 527] [find_prev_footer]
+!56 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !57, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!57 = metadata !{metadata !58, metadata !28}
+!58 = metadata !{i32 786447, null, null, metadata !"", i32 0, i64 64, i64 64, i64 0, i32 0, metadata !33} ; [ DW_TAG_pointer_type ] [line 0, size 64, align 64, offset 0] [from word_t]
+!59 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"find_next", metadata !"find_next", metadata !"", i32 514, metadata !60, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (%struct.block*)* @find_next, null, null, metadata !2, i32 515} ; [ DW_TAG_subprogram ] [line 514] [local] [def] [scope 515] [find_next]
+!60 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !61, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!61 = metadata !{metadata !28, metadata !28}
+!62 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"extract_alloc", metadata !"extract_alloc", metadata !"", i32 475, metadata !63, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (i64)* @extract_alloc, null, null, metadata !2, i32 476} ; [ DW_TAG_subprogram ] [line 475] [local] [def] [scope 476] [extract_alloc]
+!63 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !64, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!64 = metadata !{metadata !8, metadata !33}
+!65 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"get_alloc", metadata !"get_alloc", metadata !"", i32 484, metadata !49, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (%struct.block*)* @get_alloc, null, null, metadata !2, i32 485} ; [ DW_TAG_subprogram ] [line 484] [local] [def] [scope 485] [get_alloc]
+!66 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"extract_size", metadata !"extract_size", metadata !"", i32 447, metadata !67, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (i64)* @extract_size, null, null, metadata !2, i32 448} ; [ DW_TAG_subprogram ] [line 447] [local] [def] [scope 448] [extract_size]
+!67 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !68, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!68 = metadata !{metadata !13, metadata !33}
+!69 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"in_heap", metadata !"in_heap", metadata !"", i32 566, metadata !70, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (i8*)* @in_heap, null, null, metadata !2, i32 566} ; [ DW_TAG_subprogram ] [line 566] [local] [def] [in_heap]
+!70 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !71, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!71 = metadata !{metadata !8, metadata !72}
+!72 = metadata !{i32 786447, null, null, metadata !"", i32 0, i64 64, i64 64, i64 0, i32 0, metadata !73} ; [ DW_TAG_pointer_type ] [line 0, size 64, align 64, offset 0] [from ]
+!73 = metadata !{i32 786470, null, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null} ; [ DW_TAG_const_type ] [line 0, size 0, align 0, offset 0] [from ]
+!74 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"aligned", metadata !"aligned", metadata !"", i32 574, metadata !70, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i1 (i8*)* @aligned, null, null, metadata !2, i32 574} ; [ DW_TAG_subprogram ] [line 574] [local] [def] [aligned]
+!75 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"align", metadata !"align", metadata !"", i32 580, metadata !76, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (i64)* @align, null, null, metadata !2, i32 580} ; [ DW_TAG_subprogram ] [line 580] [local] [def] [align]
+!76 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !77, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!77 = metadata !{metadata !13, metadata !13}
+!78 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"write_footer", metadata !"write_footer", metadata !"", i32 503, metadata !46, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*, i64, i1)* @write_footer, null, null, metadata !2, i32 504} ; [ DW_TAG_subprogram ] [line 503] [local] [def] [scope 504] [write_footer]
+!79 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"write_header", metadata !"write_header", metadata !"", i32 493, metadata !46, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*, i64, i1)* @write_header, null, null, metadata !2, i32 494} ; [ DW_TAG_subprogram ] [line 493] [local] [def] [scope 494] [write_header]
+!80 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"header_to_payload", metadata !"header_to_payload", metadata !"", i32 557, metadata !81, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i8* (%struct.block*)* @header_to_payload, null, null, metadata !2, i32 558} ; [ DW_TAG_subprogram ] [line 557] [local] [def] [scope 558] [header_to_payload]
+!81 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !82, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!82 = metadata !{metadata !12, metadata !28}
+!83 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"payload_to_header", metadata !"payload_to_header", metadata !"", i32 548, metadata !84, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (i8*)* @payload_to_header, null, null, metadata !2, i32 549} ; [ DW_TAG_subprogram ] [line 548] [local] [def] [scope 549] [payload_to_header]
+!84 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !85, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!85 = metadata !{metadata !28, metadata !12}
+!86 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"get_payload_size", metadata !"get_payload_size", metadata !"", i32 465, metadata !87, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (%struct.block*)* @get_payload_size, null, null, metadata !2, i32 466} ; [ DW_TAG_subprogram ] [line 465] [local] [def] [scope 466] [get_payload_size]
+!87 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !88, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!88 = metadata !{metadata !13, metadata !28}
+!89 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"get_size", metadata !"get_size", metadata !"", i32 456, metadata !87, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (%struct.block*)* @get_size, null, null, metadata !2, i32 457} ; [ DW_TAG_subprogram ] [line 456] [local] [def] [scope 457] [get_size]
+!90 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"pack", metadata !"pack", metadata !"", i32 437, metadata !91, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (i64, i1)* @pack, null, null, metadata !2, i32 438} ; [ DW_TAG_subprogram ] [line 437] [local] [def] [scope 438] [pack]
+!91 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !92, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!92 = metadata !{metadata !33, metadata !13, metadata !8}
+!93 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"round_up", metadata !"round_up", metadata !"", i32 428, metadata !94, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (i64, i64)* @round_up, null, null, metadata !2, i32 429} ; [ DW_TAG_subprogram ] [line 428] [local] [def] [scope 429] [round_up]
+!94 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !95, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!95 = metadata !{metadata !13, metadata !13, metadata !13}
+!96 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"max", metadata !"max", metadata !"", i32 420, metadata !94, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, i64 (i64, i64)* @max, null, null, metadata !2, i32 421} ; [ DW_TAG_subprogram ] [line 420] [local] [def] [scope 421] [max]
+!97 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"find_fit", metadata !"find_fit", metadata !"", i32 402, metadata !98, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (i64)* @find_fit, null, null, metadata !2, i32 402} ; [ DW_TAG_subprogram ] [line 402] [local] [def] [find_fit]
+!98 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !99, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!99 = metadata !{metadata !28, metadata !13}
+!100 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"place", metadata !"place", metadata !"", i32 380, metadata !101, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, void (%struct.block*, i64)* @place, null, null, metadata !2, i32 380} ; [ DW_TAG_subprogram ] [line 380] [local] [def] [place]
+!101 = metadata !{i32 786453, i32 0, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !102, i32 0, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!102 = metadata !{null, metadata !28, metadata !13}
+!103 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"coalesce", metadata !"coalesce", metadata !"", i32 312, metadata !60, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (%struct.block*)* @coalesce, null, null, metadata !2, i32 312} ; [ DW_TAG_subprogram ] [line 312] [local] [def] [coalesce]
+!104 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"find_prev", metadata !"find_prev", metadata !"", i32 537, metadata !60, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (%struct.block*)* @find_prev, null, null, metadata !2, i32 538} ; [ DW_TAG_subprogram ] [line 537] [local] [def] [scope 538] [find_prev]
+!105 = metadata !{i32 786478, metadata !1, metadata !5, metadata !"extend_heap", metadata !"extend_heap", metadata !"", i32 287, metadata !98, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, %struct.block* (i64)* @extend_heap, null, null, metadata !2, i32 287} ; [ DW_TAG_subprogram ] [line 287] [local] [def] [extend_heap]
+!106 = metadata !{metadata !107, metadata !109, metadata !110, metadata !110, metadata !109, metadata !107, metadata !110, metadata !111, metadata !113, metadata !110, metadata !114, metadata !110, metadata !115, metadata !110, metadata !116}
+!107 = metadata !{i32 786484, i32 0, metadata !5, metadata !"wsize", metadata !"wsize", metadata !"wsize", metadata !5, i32 59, metadata !108, i32 1, i32 1, i64 8, null} ; [ DW_TAG_variable ] [wsize] [line 59] [local] [def]
+!108 = metadata !{i32 786470, null, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, metadata !13} ; [ DW_TAG_const_type ] [line 0, size 0, align 0, offset 0] [from size_t]
+!109 = metadata !{i32 786484, i32 0, metadata !5, metadata !"chunksize", metadata !"chunksize", metadata !"chunksize", metadata !5, i32 62, metadata !108, i32 1, i32 1, i64 4096, null} ; [ DW_TAG_variable ] [chunksize] [line 62] [local] [def]
+!110 = metadata !{i32 786484, i32 0, metadata !5, metadata !"dsize", metadata !"dsize", metadata !"dsize", metadata !5, i32 60, metadata !108, i32 1, i32 1, i64 16, null} ; [ DW_TAG_variable ] [dsize] [line 60] [local] [def]
+!111 = metadata !{i32 786484, i32 0, metadata !5, metadata !"alloc_mask", metadata !"alloc_mask", metadata !"alloc_mask", metadata !5, i32 64, metadata !112, i32 1, i32 1, i64 1, null} ; [ DW_TAG_variable ] [alloc_mask] [line 64] [local] [def]
+!112 = metadata !{i32 786470, null, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, metadata !33} ; [ DW_TAG_const_type ] [line 0, size 0, align 0, offset 0] [from word_t]
+!113 = metadata !{i32 786484, i32 0, metadata !5, metadata !"size_mask", metadata !"size_mask", metadata !"size_mask", metadata !5, i32 65, metadata !112, i32 1, i32 1, i64 -16, null} ; [ DW_TAG_variable ] [size_mask] [line 65] [local] [def]
+!114 = metadata !{i32 786484, i32 0, null, metadata !"free_listp", metadata !"free_listp", metadata !"", metadata !5, i32 88, metadata !28, i32 1, i32 1, %struct.block** @free_listp, null} ; [ DW_TAG_variable ] [free_listp] [line 88] [local] [def]
+!115 = metadata !{i32 786484, i32 0, metadata !5, metadata !"min_block_size", metadata !"min_block_size", metadata !"min_block_size", metadata !5, i32 61, metadata !108, i32 1, i32 1, i64 32, null} ; [ DW_TAG_variable ] [min_block_size] [line 61] [local] [def]
+!116 = metadata !{i32 786484, i32 0, null, metadata !"heap_listp", metadata !"heap_listp", metadata !"", metadata !5, i32 87, metadata !28, i32 1, i32 1, %struct.block** @heap_listp, null} ; [ DW_TAG_variable ] [heap_listp] [line 87] [local] [def]
+!117 = metadata !{i32 2, metadata !"Dwarf Version", i32 4}
+!118 = metadata !{i32 1, metadata !"Debug Info Version", i32 1}
+!119 = metadata !{metadata !"clang version 3.4.2 (tags/RELEASE_34/dot2-final)"}
+!120 = metadata !{i32 133, i32 0, metadata !4, null}
+!121 = metadata !{i32 786688, metadata !4, metadata !"start", metadata !5, i32 135, metadata !58, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [start] [line 135]
+!122 = metadata !{i32 135, i32 0, metadata !4, null}
+!123 = metadata !{i32 137, i32 0, metadata !124, null}
+!124 = metadata !{i32 786443, metadata !1, metadata !4, i32 137, i32 0, i32 0} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!125 = metadata !{i32 139, i32 0, metadata !126, null}
+!126 = metadata !{i32 786443, metadata !1, metadata !124, i32 138, i32 0, i32 1} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!127 = metadata !{i32 142, i32 0, metadata !4, null}
+!128 = metadata !{i32 143, i32 0, metadata !4, null}
+!129 = metadata !{i32 146, i32 0, metadata !4, null}
+!130 = metadata !{i32 149, i32 0, metadata !131, null}
+!131 = metadata !{i32 786443, metadata !1, metadata !4, i32 149, i32 0, i32 2} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!132 = metadata !{i32 151, i32 0, metadata !133, null}
+!133 = metadata !{i32 786443, metadata !1, metadata !131, i32 150, i32 0, i32 3} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!134 = metadata !{i32 153, i32 0, metadata !4, null}
+!135 = metadata !{i32 154, i32 0, metadata !4, null}
+!136 = metadata !{i32 786689, metadata !90, metadata !"size", metadata !5, i32 16777653, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 437]
+!137 = metadata !{i32 437, i32 0, metadata !90, null}
+!138 = metadata !{i32 786689, metadata !90, metadata !"alloc", metadata !5, i32 33554869, metadata !8, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [alloc] [line 437]
+!139 = metadata !{i32 439, i32 0, metadata !90, null}
+!140 = metadata !{i32 786689, metadata !105, metadata !"size", metadata !5, i32 16777503, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 287]
+!141 = metadata !{i32 287, i32 0, metadata !105, null}
+!142 = metadata !{i32 289, i32 0, metadata !105, null}
+!143 = metadata !{i32 786688, metadata !105, metadata !"bp", metadata !5, i32 291, metadata !12, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [bp] [line 291]
+!144 = metadata !{i32 291, i32 0, metadata !105, null}
+!145 = metadata !{i32 294, i32 0, metadata !105, null}
+!146 = metadata !{i32 295, i32 0, metadata !147, null}
+!147 = metadata !{i32 786443, metadata !1, metadata !105, i32 295, i32 0, i32 83} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!148 = metadata !{i32 296, i32 0, metadata !149, null}
+!149 = metadata !{i32 786443, metadata !1, metadata !147, i32 295, i32 0, i32 84} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!150 = metadata !{i32 786688, metadata !105, metadata !"block", metadata !5, i32 300, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 300]
+!151 = metadata !{i32 300, i32 0, metadata !105, null}
+!152 = metadata !{i32 301, i32 0, metadata !105, null}
+!153 = metadata !{i32 302, i32 0, metadata !105, null}
+!154 = metadata !{i32 786688, metadata !105, metadata !"block_next", metadata !5, i32 305, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next] [line 305]
+!155 = metadata !{i32 305, i32 0, metadata !105, null}
+!156 = metadata !{i32 306, i32 0, metadata !105, null}
+!157 = metadata !{i32 309, i32 0, metadata !105, null}
+!158 = metadata !{i32 310, i32 0, metadata !105, null}
+!159 = metadata !{i32 786689, metadata !9, metadata !"size", metadata !5, i32 16777372, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 156]
+!160 = metadata !{i32 156, i32 0, metadata !9, null}
+!161 = metadata !{i32 157, i32 0, metadata !9, null}
+!162 = metadata !{i32 159, i32 0, metadata !9, null}
+!163 = metadata !{i32 786688, metadata !9, metadata !"asize", metadata !5, i32 161, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [asize] [line 161]
+!164 = metadata !{i32 161, i32 0, metadata !9, null}
+!165 = metadata !{i32 786688, metadata !9, metadata !"extendsize", metadata !5, i32 162, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [extendsize] [line 162]
+!166 = metadata !{i32 162, i32 0, metadata !9, null}
+!167 = metadata !{i32 786688, metadata !9, metadata !"block", metadata !5, i32 163, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 163]
+!168 = metadata !{i32 163, i32 0, metadata !9, null}
+!169 = metadata !{i32 786688, metadata !9, metadata !"bp", metadata !5, i32 164, metadata !12, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [bp] [line 164]
+!170 = metadata !{i32 164, i32 0, metadata !9, null}
+!171 = metadata !{i32 166, i32 0, metadata !172, null}
+!172 = metadata !{i32 786443, metadata !1, metadata !9, i32 166, i32 0, i32 4} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!173 = metadata !{i32 168, i32 0, metadata !174, null}
+!174 = metadata !{i32 786443, metadata !1, metadata !172, i32 167, i32 0, i32 5} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!175 = metadata !{i32 169, i32 0, metadata !174, null}
+!176 = metadata !{i32 171, i32 0, metadata !177, null}
+!177 = metadata !{i32 786443, metadata !1, metadata !9, i32 171, i32 0, i32 6} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!178 = metadata !{i32 173, i32 0, metadata !179, null}
+!179 = metadata !{i32 786443, metadata !1, metadata !177, i32 172, i32 0, i32 7} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!180 = metadata !{i32 174, i32 0, metadata !179, null}
+!181 = metadata !{i32 178, i32 0, metadata !9, null}
+!182 = metadata !{i32 181, i32 0, metadata !9, null}
+!183 = metadata !{i32 184, i32 0, metadata !184, null}
+!184 = metadata !{i32 786443, metadata !1, metadata !9, i32 184, i32 0, i32 8} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!185 = metadata !{i32 186, i32 0, metadata !186, null}
+!186 = metadata !{i32 786443, metadata !1, metadata !184, i32 185, i32 0, i32 9} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!187 = metadata !{i32 187, i32 0, metadata !186, null}
+!188 = metadata !{i32 188, i32 0, metadata !189, null}
+!189 = metadata !{i32 786443, metadata !1, metadata !186, i32 188, i32 0, i32 10} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!190 = metadata !{i32 190, i32 0, metadata !191, null}
+!191 = metadata !{i32 786443, metadata !1, metadata !189, i32 189, i32 0, i32 11} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!192 = metadata !{i32 192, i32 0, metadata !186, null}
+!193 = metadata !{i32 194, i32 0, metadata !9, null}
+!194 = metadata !{i32 195, i32 0, metadata !9, null}
+!195 = metadata !{i32 197, i32 0, metadata !9, null}
+!196 = metadata !{i32 198, i32 0, metadata !9, null}
+!197 = metadata !{i32 200, i32 0, metadata !9, null}
+!198 = metadata !{i32 201, i32 0, metadata !9, null}
+!199 = metadata !{i32 786689, metadata !51, metadata !"lineno", metadata !5, i32 16777880, metadata !54, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [lineno] [line 664]
+!200 = metadata !{i32 664, i32 0, metadata !51, null}
+!201 = metadata !{i32 665, i32 0, metadata !51, null}
+!202 = metadata !{i32 786688, metadata !51, metadata !"pf", metadata !5, i32 667, metadata !58, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [pf] [line 667]
+!203 = metadata !{i32 667, i32 0, metadata !51, null}
+!204 = metadata !{i32 669, i32 0, metadata !205, null}
+!205 = metadata !{i32 786443, metadata !1, metadata !51, i32 669, i32 0, i32 43} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!206 = metadata !{i32 670, i32 0, metadata !207, null}
+!207 = metadata !{i32 786443, metadata !1, metadata !205, i32 669, i32 0, i32 44} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!208 = metadata !{i32 671, i32 0, metadata !207, null}
+!209 = metadata !{i32 673, i32 0, metadata !210, null}
+!210 = metadata !{i32 786443, metadata !1, metadata !51, i32 673, i32 0, i32 45} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!211 = metadata !{i32 674, i32 0, metadata !212, null}
+!212 = metadata !{i32 786443, metadata !1, metadata !210, i32 673, i32 0, i32 46} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!213 = metadata !{i32 675, i32 0, metadata !212, null}
+!214 = metadata !{i32 786688, metadata !51, metadata !"block", metadata !5, i32 678, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 678]
+!215 = metadata !{i32 678, i32 0, metadata !51, null}
+!216 = metadata !{i32 679, i32 0, metadata !217, null}
+!217 = metadata !{i32 786443, metadata !1, metadata !51, i32 679, i32 0, i32 47} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!218 = metadata !{i32 680, i32 0, metadata !219, null}
+!219 = metadata !{i32 786443, metadata !1, metadata !220, i32 680, i32 0, i32 49} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!220 = metadata !{i32 786443, metadata !1, metadata !217, i32 679, i32 0, i32 48} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!221 = metadata !{i32 681, i32 0, metadata !220, null}
+!222 = metadata !{i32 683, i32 0, metadata !223, null}
+!223 = metadata !{i32 786443, metadata !1, metadata !51, i32 683, i32 0, i32 50} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!224 = metadata !{i32 684, i32 0, metadata !225, null}
+!225 = metadata !{i32 786443, metadata !1, metadata !223, i32 683, i32 0, i32 51} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!226 = metadata !{i32 685, i32 0, metadata !225, null}
+!227 = metadata !{i32 688, i32 0, metadata !228, null}
+!228 = metadata !{i32 786443, metadata !1, metadata !51, i32 688, i32 0, i32 52} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!229 = metadata !{i32 689, i32 0, metadata !230, null}
+!230 = metadata !{i32 786443, metadata !1, metadata !228, i32 688, i32 0, i32 53} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!231 = metadata !{i32 690, i32 0, metadata !230, null}
+!232 = metadata !{i32 786688, metadata !51, metadata !"free_lsize", metadata !5, i32 693, metadata !54, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [free_lsize] [line 693]
+!233 = metadata !{i32 693, i32 0, metadata !51, null}
+!234 = metadata !{i32 786688, metadata !51, metadata !"free_hsize", metadata !5, i32 694, metadata !54, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [free_hsize] [line 694]
+!235 = metadata !{i32 694, i32 0, metadata !51, null}
+!236 = metadata !{i32 696, i32 0, metadata !237, null}
+!237 = metadata !{i32 786443, metadata !1, metadata !51, i32 696, i32 0, i32 54} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!238 = metadata !{i32 697, i32 0, metadata !239, null}
+!239 = metadata !{i32 786443, metadata !1, metadata !237, i32 696, i32 0, i32 55} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!240 = metadata !{i32 698, i32 0, metadata !241, null}
+!241 = metadata !{i32 786443, metadata !1, metadata !239, i32 698, i32 0, i32 56} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!242 = metadata !{i32 699, i32 0, metadata !243, null}
+!243 = metadata !{i32 786443, metadata !1, metadata !241, i32 698, i32 0, i32 57} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!244 = metadata !{i32 700, i32 0, metadata !243, null}
+!245 = metadata !{i32 702, i32 0, metadata !246, null}
+!246 = metadata !{i32 786443, metadata !1, metadata !239, i32 702, i32 0, i32 58} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!247 = metadata !{i32 703, i32 0, metadata !248, null}
+!248 = metadata !{i32 786443, metadata !1, metadata !246, i32 702, i32 0, i32 59} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!249 = metadata !{i32 704, i32 0, metadata !248, null}
+!250 = metadata !{i32 706, i32 0, metadata !251, null}
+!251 = metadata !{i32 786443, metadata !1, metadata !239, i32 706, i32 0, i32 60} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!252 = metadata !{i32 707, i32 0, metadata !253, null}
+!253 = metadata !{i32 786443, metadata !1, metadata !251, i32 706, i32 0, i32 61} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!254 = metadata !{i32 708, i32 0, metadata !253, null}
+!255 = metadata !{i32 709, i32 0, metadata !253, null}
+!256 = metadata !{i32 710, i32 0, metadata !253, null}
+!257 = metadata !{i32 712, i32 0, metadata !239, null}
+!258 = metadata !{i32 713, i32 0, metadata !259, null}
+!259 = metadata !{i32 786443, metadata !1, metadata !51, i32 713, i32 0, i32 62} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!260 = metadata !{i32 714, i32 0, metadata !261, null}
+!261 = metadata !{i32 786443, metadata !1, metadata !262, i32 714, i32 0, i32 64} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!262 = metadata !{i32 786443, metadata !1, metadata !259, i32 713, i32 0, i32 63} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!263 = metadata !{i32 715, i32 0, metadata !264, null}
+!264 = metadata !{i32 786443, metadata !1, metadata !261, i32 714, i32 0, i32 65} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!265 = metadata !{i32 716, i32 0, metadata !264, null}
+!266 = metadata !{i32 717, i32 0, metadata !262, null}
+!267 = metadata !{i32 718, i32 0, metadata !268, null}
+!268 = metadata !{i32 786443, metadata !1, metadata !51, i32 718, i32 0, i32 66} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!269 = metadata !{i32 719, i32 0, metadata !270, null}
+!270 = metadata !{i32 786443, metadata !1, metadata !268, i32 718, i32 0, i32 67} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!271 = metadata !{i32 720, i32 0, metadata !270, null}
+!272 = metadata !{i32 722, i32 0, metadata !51, null}
+!273 = metadata !{i32 723, i32 0, metadata !51, null}
+!274 = metadata !{i32 724, i32 0, metadata !51, null}
+!275 = metadata !{i32 786689, metadata !93, metadata !"size", metadata !5, i32 16777644, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 428]
+!276 = metadata !{i32 428, i32 0, metadata !93, null}
+!277 = metadata !{i32 786689, metadata !93, metadata !"n", metadata !5, i32 33554860, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [n] [line 428]
+!278 = metadata !{i32 430, i32 0, metadata !93, null}
+!279 = metadata !{i32 786689, metadata !97, metadata !"asize", metadata !5, i32 16777618, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [asize] [line 402]
+!280 = metadata !{i32 402, i32 0, metadata !97, null}
+!281 = metadata !{i32 404, i32 0, metadata !97, null}
+!282 = metadata !{i32 406, i32 0, metadata !283, null}
+!283 = metadata !{i32 786443, metadata !1, metadata !97, i32 406, i32 0, i32 68} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!284 = metadata !{i32 786688, metadata !97, metadata !"block", metadata !5, i32 408, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 408]
+!285 = metadata !{i32 408, i32 0, metadata !97, null}
+!286 = metadata !{i32 409, i32 0, metadata !287, null}
+!287 = metadata !{i32 786443, metadata !1, metadata !97, i32 409, i32 0, i32 69} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!288 = metadata !{i32 410, i32 0, metadata !289, null}
+!289 = metadata !{i32 786443, metadata !1, metadata !290, i32 410, i32 0, i32 71} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!290 = metadata !{i32 786443, metadata !1, metadata !287, i32 409, i32 0, i32 70} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!291 = metadata !{i32 411, i32 0, metadata !292, null}
+!292 = metadata !{i32 786443, metadata !1, metadata !289, i32 410, i32 0, i32 72} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!293 = metadata !{i32 413, i32 0, metadata !290, null}
+!294 = metadata !{i32 414, i32 0, metadata !97, null}
+!295 = metadata !{i32 415, i32 0, metadata !97, null}
+!296 = metadata !{i32 786689, metadata !96, metadata !"x", metadata !5, i32 16777636, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [x] [line 420]
+!297 = metadata !{i32 420, i32 0, metadata !96, null}
+!298 = metadata !{i32 786689, metadata !96, metadata !"y", metadata !5, i32 33554852, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [y] [line 420]
+!299 = metadata !{i32 422, i32 0, metadata !96, null}
+!300 = metadata !{i32 786689, metadata !100, metadata !"block", metadata !5, i32 16777596, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 380]
+!301 = metadata !{i32 380, i32 0, metadata !100, null}
+!302 = metadata !{i32 786689, metadata !100, metadata !"asize", metadata !5, i32 33554812, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [asize] [line 380]
+!303 = metadata !{i32 382, i32 0, metadata !100, null}
+!304 = metadata !{i32 384, i32 0, metadata !100, null}
+!305 = metadata !{i32 786688, metadata !100, metadata !"csize", metadata !5, i32 386, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [csize] [line 386]
+!306 = metadata !{i32 386, i32 0, metadata !100, null}
+!307 = metadata !{i32 387, i32 0, metadata !308, null}
+!308 = metadata !{i32 786443, metadata !1, metadata !100, i32 387, i32 0, i32 73} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!309 = metadata !{i32 388, i32 0, metadata !310, null}
+!310 = metadata !{i32 786443, metadata !1, metadata !308, i32 387, i32 0, i32 74} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!311 = metadata !{i32 786688, metadata !310, metadata !"block_next", metadata !5, i32 389, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next] [line 389]
+!312 = metadata !{i32 389, i32 0, metadata !310, null}
+!313 = metadata !{i32 390, i32 0, metadata !310, null}
+!314 = metadata !{i32 391, i32 0, metadata !310, null}
+!315 = metadata !{i32 392, i32 0, metadata !310, null}
+!316 = metadata !{i32 394, i32 0, metadata !317, null}
+!317 = metadata !{i32 786443, metadata !1, metadata !308, i32 393, i32 0, i32 75} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!318 = metadata !{i32 396, i32 0, metadata !100, null}
+!319 = metadata !{i32 786689, metadata !80, metadata !"block", metadata !5, i32 16777773, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 557]
+!320 = metadata !{i32 557, i32 0, metadata !80, null}
+!321 = metadata !{i32 559, i32 0, metadata !80, null}
+!322 = metadata !{i32 786689, metadata !15, metadata !"ptr", metadata !5, i32 16777419, metadata !12, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [ptr] [line 203]
+!323 = metadata !{i32 203, i32 0, metadata !15, null}
+!324 = metadata !{i32 205, i32 0, metadata !15, null}
+!325 = metadata !{i32 207, i32 0, metadata !326, null}
+!326 = metadata !{i32 786443, metadata !1, metadata !15, i32 207, i32 0, i32 12} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!327 = metadata !{i32 208, i32 0, metadata !328, null}
+!328 = metadata !{i32 786443, metadata !1, metadata !326, i32 207, i32 0, i32 13} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!329 = metadata !{i32 786688, metadata !15, metadata !"block", metadata !5, i32 211, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 211]
+!330 = metadata !{i32 211, i32 0, metadata !15, null}
+!331 = metadata !{i32 786688, metadata !15, metadata !"size", metadata !5, i32 212, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [size] [line 212]
+!332 = metadata !{i32 212, i32 0, metadata !15, null}
+!333 = metadata !{i32 214, i32 0, metadata !15, null}
+!334 = metadata !{i32 215, i32 0, metadata !15, null}
+!335 = metadata !{i32 217, i32 0, metadata !15, null}
+!336 = metadata !{i32 218, i32 0, metadata !15, null}
+!337 = metadata !{i32 786689, metadata !83, metadata !"bp", metadata !5, i32 16777764, metadata !12, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [bp] [line 548]
+!338 = metadata !{i32 548, i32 0, metadata !83, null}
+!339 = metadata !{i32 550, i32 0, metadata !83, null}
+!340 = metadata !{i32 786689, metadata !89, metadata !"block", metadata !5, i32 16777672, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 456]
+!341 = metadata !{i32 456, i32 0, metadata !89, null}
+!342 = metadata !{i32 458, i32 0, metadata !89, null}
+!343 = metadata !{i32 786689, metadata !45, metadata !"block", metadata !5, i32 16777842, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 626]
+!344 = metadata !{i32 626, i32 0, metadata !45, null}
+!345 = metadata !{i32 786689, metadata !45, metadata !"size", metadata !5, i32 33555058, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 626]
+!346 = metadata !{i32 786689, metadata !45, metadata !"alloc", metadata !5, i32 50332274, metadata !8, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [alloc] [line 626]
+!347 = metadata !{i32 627, i32 0, metadata !45, null}
+!348 = metadata !{i32 628, i32 0, metadata !45, null}
+!349 = metadata !{i32 629, i32 0, metadata !45, null}
+!350 = metadata !{i32 786689, metadata !41, metadata !"block", metadata !5, i32 16777808, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 592]
+!351 = metadata !{i32 592, i32 0, metadata !41, null}
+!352 = metadata !{i32 594, i32 0, metadata !41, null}
+!353 = metadata !{i32 786688, metadata !41, metadata !"block_pp", metadata !5, i32 596, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_pp] [line 596]
+!354 = metadata !{i32 596, i32 0, metadata !41, null}
+!355 = metadata !{i32 786688, metadata !41, metadata !"block_np", metadata !5, i32 597, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_np] [line 597]
+!356 = metadata !{i32 597, i32 0, metadata !41, null}
+!357 = metadata !{i32 598, i32 0, metadata !41, null}
+!358 = metadata !{i32 599, i32 0, metadata !41, null}
+!359 = metadata !{i32 601, i32 0, metadata !360, null}
+!360 = metadata !{i32 786443, metadata !1, metadata !41, i32 601, i32 0, i32 25} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!361 = metadata !{i32 786688, metadata !362, metadata !"free_listp_pp", metadata !5, i32 602, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [free_listp_pp] [line 602]
+!362 = metadata !{i32 786443, metadata !1, metadata !360, i32 601, i32 0, i32 26} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!363 = metadata !{i32 602, i32 0, metadata !362, null}
+!364 = metadata !{i32 603, i32 0, metadata !362, null}
+!365 = metadata !{i32 604, i32 0, metadata !362, null}
+!366 = metadata !{i32 605, i32 0, metadata !41, null}
+!367 = metadata !{i32 606, i32 0, metadata !41, null}
+!368 = metadata !{i32 786689, metadata !103, metadata !"block", metadata !5, i32 16777528, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 312]
+!369 = metadata !{i32 312, i32 0, metadata !103, null}
+!370 = metadata !{i32 314, i32 0, metadata !103, null}
+!371 = metadata !{i32 786688, metadata !103, metadata !"block_next", metadata !5, i32 316, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next] [line 316]
+!372 = metadata !{i32 316, i32 0, metadata !103, null}
+!373 = metadata !{i32 786688, metadata !103, metadata !"block_prev", metadata !5, i32 317, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_prev] [line 317]
+!374 = metadata !{i32 317, i32 0, metadata !103, null}
+!375 = metadata !{i32 786688, metadata !103, metadata !"prev_alloc", metadata !5, i32 319, metadata !8, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [prev_alloc] [line 319]
+!376 = metadata !{i32 319, i32 0, metadata !103, null}
+!377 = metadata !{i32 786688, metadata !103, metadata !"next_alloc", metadata !5, i32 320, metadata !8, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [next_alloc] [line 320]
+!378 = metadata !{i32 320, i32 0, metadata !103, null}
+!379 = metadata !{i32 786688, metadata !103, metadata !"size", metadata !5, i32 321, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [size] [line 321]
+!380 = metadata !{i32 321, i32 0, metadata !103, null}
+!381 = metadata !{i32 323, i32 0, metadata !382, null}
+!382 = metadata !{i32 786443, metadata !1, metadata !103, i32 323, i32 0, i32 76} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!383 = metadata !{i32 324, i32 0, metadata !384, null}
+!384 = metadata !{i32 786443, metadata !1, metadata !382, i32 323, i32 0, i32 77} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!385 = metadata !{i32 325, i32 0, metadata !384, null}
+!386 = metadata !{i32 327, i32 0, metadata !387, null}
+!387 = metadata !{i32 786443, metadata !1, metadata !382, i32 327, i32 0, i32 78} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!388 = metadata !{i32 328, i32 0, metadata !389, null}
+!389 = metadata !{i32 786443, metadata !1, metadata !387, i32 327, i32 0, i32 79} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!390 = metadata !{i32 329, i32 0, metadata !389, null}
+!391 = metadata !{i32 330, i32 0, metadata !389, null}
+!392 = metadata !{i32 331, i32 0, metadata !389, null}
+!393 = metadata !{i32 332, i32 0, metadata !389, null}
+!394 = metadata !{i32 333, i32 0, metadata !389, null}
+!395 = metadata !{i32 786688, metadata !389, metadata !"block_next_pp", metadata !5, i32 334, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next_pp] [line 334]
+!396 = metadata !{i32 334, i32 0, metadata !389, null}
+!397 = metadata !{i32 786688, metadata !389, metadata !"block_next_np", metadata !5, i32 335, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next_np] [line 335]
+!398 = metadata !{i32 335, i32 0, metadata !389, null}
+!399 = metadata !{i32 336, i32 0, metadata !389, null}
+!400 = metadata !{i32 337, i32 0, metadata !389, null}
+!401 = metadata !{i32 338, i32 0, metadata !389, null}
+!402 = metadata !{i32 339, i32 0, metadata !403, null}
+!403 = metadata !{i32 786443, metadata !1, metadata !387, i32 339, i32 0, i32 80} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!404 = metadata !{i32 340, i32 0, metadata !405, null}
+!405 = metadata !{i32 786443, metadata !1, metadata !403, i32 339, i32 0, i32 81} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!406 = metadata !{i32 341, i32 0, metadata !405, null}
+!407 = metadata !{i32 342, i32 0, metadata !405, null}
+!408 = metadata !{i32 343, i32 0, metadata !405, null}
+!409 = metadata !{i32 344, i32 0, metadata !405, null}
+!410 = metadata !{i32 345, i32 0, metadata !405, null}
+!411 = metadata !{i32 786688, metadata !405, metadata !"block_pp", metadata !5, i32 346, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_pp] [line 346]
+!412 = metadata !{i32 346, i32 0, metadata !405, null}
+!413 = metadata !{i32 786688, metadata !405, metadata !"block_np", metadata !5, i32 347, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_np] [line 347]
+!414 = metadata !{i32 347, i32 0, metadata !405, null}
+!415 = metadata !{i32 348, i32 0, metadata !405, null}
+!416 = metadata !{i32 349, i32 0, metadata !405, null}
+!417 = metadata !{i32 350, i32 0, metadata !405, null}
+!418 = metadata !{i32 351, i32 0, metadata !405, null}
+!419 = metadata !{i32 353, i32 0, metadata !420, null}
+!420 = metadata !{i32 786443, metadata !1, metadata !403, i32 352, i32 0, i32 82} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!421 = metadata !{i32 354, i32 0, metadata !420, null}
+!422 = metadata !{i32 355, i32 0, metadata !420, null}
+!423 = metadata !{i32 356, i32 0, metadata !420, null}
+!424 = metadata !{i32 357, i32 0, metadata !420, null}
+!425 = metadata !{i32 358, i32 0, metadata !420, null}
+!426 = metadata !{i32 359, i32 0, metadata !420, null}
+!427 = metadata !{i32 786688, metadata !420, metadata !"block_pp", metadata !5, i32 360, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_pp] [line 360]
+!428 = metadata !{i32 360, i32 0, metadata !420, null}
+!429 = metadata !{i32 786688, metadata !420, metadata !"block_np", metadata !5, i32 361, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_np] [line 361]
+!430 = metadata !{i32 361, i32 0, metadata !420, null}
+!431 = metadata !{i32 362, i32 0, metadata !420, null}
+!432 = metadata !{i32 363, i32 0, metadata !420, null}
+!433 = metadata !{i32 786688, metadata !420, metadata !"block_next_pp", metadata !5, i32 364, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next_pp] [line 364]
+!434 = metadata !{i32 364, i32 0, metadata !420, null}
+!435 = metadata !{i32 786688, metadata !420, metadata !"block_next_np", metadata !5, i32 365, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next_np] [line 365]
+!436 = metadata !{i32 365, i32 0, metadata !420, null}
+!437 = metadata !{i32 366, i32 0, metadata !420, null}
+!438 = metadata !{i32 367, i32 0, metadata !420, null}
+!439 = metadata !{i32 368, i32 0, metadata !420, null}
+!440 = metadata !{i32 370, i32 0, metadata !103, null}
+!441 = metadata !{i32 371, i32 0, metadata !103, null}
+!442 = metadata !{i32 786689, metadata !18, metadata !"oldptr", metadata !5, i32 16777436, metadata !12, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [oldptr] [line 220]
+!443 = metadata !{i32 220, i32 0, metadata !18, null}
+!444 = metadata !{i32 786689, metadata !18, metadata !"size", metadata !5, i32 33554652, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 220]
+!445 = metadata !{i32 786688, metadata !18, metadata !"block", metadata !5, i32 221, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block] [line 221]
+!446 = metadata !{i32 221, i32 0, metadata !18, null}
+!447 = metadata !{i32 786688, metadata !18, metadata !"copysize", metadata !5, i32 222, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [copysize] [line 222]
+!448 = metadata !{i32 222, i32 0, metadata !18, null}
+!449 = metadata !{i32 786688, metadata !18, metadata !"newptr", metadata !5, i32 223, metadata !12, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [newptr] [line 223]
+!450 = metadata !{i32 223, i32 0, metadata !18, null}
+!451 = metadata !{i32 226, i32 0, metadata !452, null}
+!452 = metadata !{i32 786443, metadata !1, metadata !18, i32 226, i32 0, i32 14} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!453 = metadata !{i32 228, i32 0, metadata !454, null}
+!454 = metadata !{i32 786443, metadata !1, metadata !452, i32 227, i32 0, i32 15} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!455 = metadata !{i32 229, i32 0, metadata !454, null}
+!456 = metadata !{i32 233, i32 0, metadata !457, null}
+!457 = metadata !{i32 786443, metadata !1, metadata !18, i32 233, i32 0, i32 16} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!458 = metadata !{i32 235, i32 0, metadata !459, null}
+!459 = metadata !{i32 786443, metadata !1, metadata !457, i32 234, i32 0, i32 17} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!460 = metadata !{i32 239, i32 0, metadata !18, null}
+!461 = metadata !{i32 241, i32 0, metadata !462, null}
+!462 = metadata !{i32 786443, metadata !1, metadata !18, i32 241, i32 0, i32 18} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!463 = metadata !{i32 243, i32 0, metadata !464, null}
+!464 = metadata !{i32 786443, metadata !1, metadata !462, i32 242, i32 0, i32 19} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!465 = metadata !{i32 247, i32 0, metadata !18, null}
+!466 = metadata !{i32 248, i32 0, metadata !467, null}
+!467 = metadata !{i32 786443, metadata !1, metadata !18, i32 248, i32 0, i32 20} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!468 = metadata !{i32 250, i32 0, metadata !469, null}
+!469 = metadata !{i32 786443, metadata !1, metadata !467, i32 249, i32 0, i32 21} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!470 = metadata !{i32 251, i32 0, metadata !469, null}
+!471 = metadata !{i32 252, i32 0, metadata !18, null}
+!472 = metadata !{i32 255, i32 0, metadata !18, null}
+!473 = metadata !{i32 257, i32 0, metadata !18, null}
+!474 = metadata !{i32 258, i32 0, metadata !18, null}
+!475 = metadata !{i32 786689, metadata !86, metadata !"block", metadata !5, i32 16777681, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 465]
+!476 = metadata !{i32 465, i32 0, metadata !86, null}
+!477 = metadata !{i32 786688, metadata !86, metadata !"asize", metadata !5, i32 467, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [asize] [line 467]
+!478 = metadata !{i32 467, i32 0, metadata !86, null}
+!479 = metadata !{i32 468, i32 0, metadata !86, null}
+!480 = metadata !{i32 786689, metadata !21, metadata !"nmemb", metadata !5, i32 16777476, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [nmemb] [line 260]
+!481 = metadata !{i32 260, i32 0, metadata !21, null}
+!482 = metadata !{i32 786689, metadata !21, metadata !"size", metadata !5, i32 33554692, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 260]
+!483 = metadata !{i32 786688, metadata !21, metadata !"bp", metadata !5, i32 261, metadata !12, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [bp] [line 261]
+!484 = metadata !{i32 261, i32 0, metadata !21, null}
+!485 = metadata !{i32 786688, metadata !21, metadata !"asize", metadata !5, i32 262, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [asize] [line 262]
+!486 = metadata !{i32 262, i32 0, metadata !21, null}
+!487 = metadata !{i32 264, i32 0, metadata !488, null}
+!488 = metadata !{i32 786443, metadata !1, metadata !21, i32 264, i32 0, i32 22} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!489 = metadata !{i32 266, i32 0, metadata !488, null}
+!490 = metadata !{i32 268, i32 0, metadata !21, null}
+!491 = metadata !{i32 269, i32 0, metadata !492, null}
+!492 = metadata !{i32 786443, metadata !1, metadata !21, i32 269, i32 0, i32 23} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!493 = metadata !{i32 271, i32 0, metadata !494, null}
+!494 = metadata !{i32 786443, metadata !1, metadata !492, i32 270, i32 0, i32 24} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!495 = metadata !{i32 274, i32 0, metadata !21, null}
+!496 = metadata !{i32 276, i32 0, metadata !21, null}
+!497 = metadata !{i32 277, i32 0, metadata !21, null}
+!498 = metadata !{i32 786689, metadata !24, metadata !"block", metadata !5, i32 16777800, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 584]
+!499 = metadata !{i32 584, i32 0, metadata !24, null}
+!500 = metadata !{i32 585, i32 0, metadata !24, null}
+!501 = metadata !{i32 786689, metadata !40, metadata !"block", metadata !5, i32 16777804, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 588]
+!502 = metadata !{i32 588, i32 0, metadata !40, null}
+!503 = metadata !{i32 589, i32 0, metadata !40, null}
+!504 = metadata !{i32 786689, metadata !44, metadata !"block", metadata !5, i32 16777824, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 608]
+!505 = metadata !{i32 608, i32 0, metadata !44, null}
+!506 = metadata !{i32 610, i32 0, metadata !44, null}
+!507 = metadata !{i32 612, i32 0, metadata !508, null}
+!508 = metadata !{i32 786443, metadata !1, metadata !44, i32 612, i32 0, i32 27} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!509 = metadata !{i32 613, i32 0, metadata !510, null}
+!510 = metadata !{i32 786443, metadata !1, metadata !511, i32 613, i32 0, i32 29} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!511 = metadata !{i32 786443, metadata !1, metadata !508, i32 612, i32 0, i32 28} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!512 = metadata !{i32 614, i32 0, metadata !510, null}
+!513 = metadata !{i32 615, i32 0, metadata !511, null}
+!514 = metadata !{i32 786688, metadata !515, metadata !"block_pp_np", metadata !5, i32 617, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_pp_np] [line 617]
+!515 = metadata !{i32 786443, metadata !1, metadata !508, i32 616, i32 0, i32 30} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!516 = metadata !{i32 617, i32 0, metadata !515, null}
+!517 = metadata !{i32 618, i32 0, metadata !515, null}
+!518 = metadata !{i32 619, i32 0, metadata !519, null}
+!519 = metadata !{i32 786443, metadata !1, metadata !515, i32 619, i32 0, i32 31} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!520 = metadata !{i32 786688, metadata !521, metadata !"block_np_pp", metadata !5, i32 620, metadata !27, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_np_pp] [line 620]
+!521 = metadata !{i32 786443, metadata !1, metadata !519, i32 619, i32 0, i32 32} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!522 = metadata !{i32 620, i32 0, metadata !521, null}
+!523 = metadata !{i32 621, i32 0, metadata !521, null}
+!524 = metadata !{i32 622, i32 0, metadata !521, null}
+!525 = metadata !{i32 624, i32 0, metadata !44, null}
+!526 = metadata !{i32 786689, metadata !79, metadata !"block", metadata !5, i32 16777709, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 493]
+!527 = metadata !{i32 493, i32 0, metadata !79, null}
+!528 = metadata !{i32 786689, metadata !79, metadata !"size", metadata !5, i32 33554925, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 493]
+!529 = metadata !{i32 786689, metadata !79, metadata !"alloc", metadata !5, i32 50332141, metadata !8, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [alloc] [line 493]
+!530 = metadata !{i32 495, i32 0, metadata !79, null}
+!531 = metadata !{i32 496, i32 0, metadata !79, null}
+!532 = metadata !{i32 786689, metadata !78, metadata !"block", metadata !5, i32 16777719, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 503]
+!533 = metadata !{i32 503, i32 0, metadata !78, null}
+!534 = metadata !{i32 786689, metadata !78, metadata !"size", metadata !5, i32 33554935, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [size] [line 503]
+!535 = metadata !{i32 786689, metadata !78, metadata !"alloc", metadata !5, i32 50332151, metadata !8, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [alloc] [line 503]
+!536 = metadata !{i32 786688, metadata !78, metadata !"footerp", metadata !5, i32 505, metadata !58, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [footerp] [line 505]
+!537 = metadata !{i32 505, i32 0, metadata !78, null}
+!538 = metadata !{i32 506, i32 0, metadata !78, null}
+!539 = metadata !{i32 507, i32 0, metadata !78, null}
+!540 = metadata !{i32 786689, metadata !48, metadata !"block", metadata !5, i32 16777847, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 631]
+!541 = metadata !{i32 631, i32 0, metadata !48, null}
+!542 = metadata !{i32 633, i32 0, metadata !48, null}
+!543 = metadata !{i32 786688, metadata !48, metadata !"fp", metadata !5, i32 635, metadata !58, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [fp] [line 635]
+!544 = metadata !{i32 635, i32 0, metadata !48, null}
+!545 = metadata !{i32 638, i32 0, metadata !546, null}
+!546 = metadata !{i32 786443, metadata !1, metadata !48, i32 638, i32 0, i32 33} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!547 = metadata !{i32 639, i32 0, metadata !548, null}
+!548 = metadata !{i32 786443, metadata !1, metadata !546, i32 638, i32 0, i32 34} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!549 = metadata !{i32 640, i32 0, metadata !548, null}
+!550 = metadata !{i32 642, i32 0, metadata !551, null}
+!551 = metadata !{i32 786443, metadata !1, metadata !546, i32 642, i32 0, i32 35} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!552 = metadata !{i32 643, i32 0, metadata !553, null}
+!553 = metadata !{i32 786443, metadata !1, metadata !551, i32 642, i32 0, i32 36} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!554 = metadata !{i32 644, i32 0, metadata !553, null}
+!555 = metadata !{i32 646, i32 0, metadata !556, null}
+!556 = metadata !{i32 786443, metadata !1, metadata !551, i32 646, i32 0, i32 37} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!557 = metadata !{i32 647, i32 0, metadata !558, null}
+!558 = metadata !{i32 786443, metadata !1, metadata !556, i32 646, i32 0, i32 38} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!559 = metadata !{i32 648, i32 0, metadata !558, null}
+!560 = metadata !{i32 650, i32 0, metadata !561, null}
+!561 = metadata !{i32 786443, metadata !1, metadata !556, i32 650, i32 0, i32 39} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!562 = metadata !{i32 651, i32 0, metadata !563, null}
+!563 = metadata !{i32 786443, metadata !1, metadata !561, i32 650, i32 0, i32 40} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!564 = metadata !{i32 652, i32 0, metadata !563, null}
+!565 = metadata !{i32 786688, metadata !48, metadata !"nb", metadata !5, i32 656, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [nb] [line 656]
+!566 = metadata !{i32 656, i32 0, metadata !48, null}
+!567 = metadata !{i32 657, i32 0, metadata !568, null}
+!568 = metadata !{i32 786443, metadata !1, metadata !48, i32 657, i32 0, i32 41} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!569 = metadata !{i32 658, i32 0, metadata !570, null}
+!570 = metadata !{i32 786443, metadata !1, metadata !568, i32 657, i32 0, i32 42} ; [ DW_TAG_lexical_block ] [/afs/andrew.cmu.edu/usr3/kkhode/private/malloc-handout/mm.c]
+!571 = metadata !{i32 659, i32 0, metadata !570, null}
+!572 = metadata !{i32 661, i32 0, metadata !48, null}
+!573 = metadata !{i32 662, i32 0, metadata !48, null}
+!574 = metadata !{i32 786689, metadata !74, metadata !"p", metadata !5, i32 16777790, metadata !72, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [p] [line 574]
+!575 = metadata !{i32 574, i32 0, metadata !74, null}
+!576 = metadata !{i32 786688, metadata !74, metadata !"ip", metadata !5, i32 575, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [ip] [line 575]
+!577 = metadata !{i32 575, i32 0, metadata !74, null}
+!578 = metadata !{i32 576, i32 0, metadata !74, null}
+!579 = metadata !{i32 786689, metadata !69, metadata !"p", metadata !5, i32 16777782, metadata !72, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [p] [line 566]
+!580 = metadata !{i32 566, i32 0, metadata !69, null}
+!581 = metadata !{i32 567, i32 0, metadata !69, null}
+!582 = metadata !{i32 568, i32 0, metadata !69, null}
+!583 = metadata !{i32 786689, metadata !66, metadata !"word", metadata !5, i32 16777663, metadata !33, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [word] [line 447]
+!584 = metadata !{i32 447, i32 0, metadata !66, null}
+!585 = metadata !{i32 449, i32 0, metadata !66, null}
+!586 = metadata !{i32 786689, metadata !65, metadata !"block", metadata !5, i32 16777700, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 484]
+!587 = metadata !{i32 484, i32 0, metadata !65, null}
+!588 = metadata !{i32 486, i32 0, metadata !65, null}
+!589 = metadata !{i32 786689, metadata !62, metadata !"word", metadata !5, i32 16777691, metadata !33, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [word] [line 475]
+!590 = metadata !{i32 475, i32 0, metadata !62, null}
+!591 = metadata !{i32 477, i32 0, metadata !62, null}
+!592 = metadata !{i32 786689, metadata !59, metadata !"block", metadata !5, i32 16777730, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 514]
+!593 = metadata !{i32 514, i32 0, metadata !59, null}
+!594 = metadata !{i32 516, i32 0, metadata !59, null}
+!595 = metadata !{i32 786688, metadata !59, metadata !"block_next", metadata !5, i32 517, metadata !28, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [block_next] [line 517]
+!596 = metadata !{i32 517, i32 0, metadata !59, null}
+!597 = metadata !{i32 519, i32 0, metadata !59, null}
+!598 = metadata !{i32 520, i32 0, metadata !59, null}
+!599 = metadata !{i32 786689, metadata !55, metadata !"block", metadata !5, i32 16777742, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 526]
+!600 = metadata !{i32 526, i32 0, metadata !55, null}
+!601 = metadata !{i32 529, i32 0, metadata !55, null}
+!602 = metadata !{i32 786689, metadata !75, metadata !"x", metadata !5, i32 16777796, metadata !13, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [x] [line 580]
+!603 = metadata !{i32 580, i32 0, metadata !75, null}
+!604 = metadata !{i32 581, i32 0, metadata !75, null}
+!605 = metadata !{i32 786689, metadata !104, metadata !"block", metadata !5, i32 16777753, metadata !28, i32 0, i32 0} ; [ DW_TAG_arg_variable ] [block] [line 537]
+!606 = metadata !{i32 537, i32 0, metadata !104, null}
+!607 = metadata !{i32 786688, metadata !104, metadata !"footerp", metadata !5, i32 539, metadata !58, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [footerp] [line 539]
+!608 = metadata !{i32 539, i32 0, metadata !104, null}
+!609 = metadata !{i32 786688, metadata !104, metadata !"size", metadata !5, i32 540, metadata !13, i32 0, i32 0} ; [ DW_TAG_auto_variable ] [size] [line 540]
+!610 = metadata !{i32 540, i32 0, metadata !104, null}
+!611 = metadata !{i32 541, i32 0, metadata !104, null}
