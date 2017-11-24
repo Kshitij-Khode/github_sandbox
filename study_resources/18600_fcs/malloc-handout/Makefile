@@ -6,8 +6,8 @@ CC = gcc
 # Compiler for mm.c
 CLANG = clang
 # Change this to -O0 (big-Oh, numeral zero) if you need to use a debugger on your code
-# COPT = -O3
-COPT = -O0
+COPT = -O3
+# COPT = -O0
 
 CFLAGS = -Wall -Wextra -Werror $(COPT) -g -DDRIVER -Wno-unused-function -Wno-unused-parameter
 LIBS = -lm -lrt
