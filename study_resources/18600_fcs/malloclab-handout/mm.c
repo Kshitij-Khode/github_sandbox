@@ -85,7 +85,7 @@ typedef struct block
 /* Global variables */
 /* Pointer to first block */
 static block_t *heap_listp = NULL;
-static block_t *free_listp = NULL;
+static block_t *freel_hp = NULL;
 
 /* Function prototypes for internal helper routines */
 static block_t *extend_heap(size_t size);
@@ -134,6 +134,9 @@ bool mm_checkblock(block_t* block);
 bool mm_init(void) {
 
     dbg_printf("mm_init::entry, ");
+
+    heap_listp = NULL;
+    freel_hp   = NULL;
 
     word_t *start = (word_t*)(mem_sbrk(2*wsize));
 
@@ -405,10 +408,10 @@ static block_t *find_fit(size_t asize) {
 
     dbg_printf("find_fit::entry, ");
 
-    if (free_listp == NULL) return NULL;
+    if (freel_hp == NULL) return NULL;
 
     block_t *block;
-    for (block = free_listp; block != NULL; block = *get_nextp(block)) {
+    for (block = freel_hp; block != NULL; block = *get_nextp(block)) {
         if (asize <= get_size(block) && !(get_alloc(block))) {
             return block;
         }
@@ -602,22 +605,21 @@ void push_to_freel(block_t* block) {
     block_t** block_pp = get_prevp(block);
     block_t** block_np = get_nextp(block);
     *block_pp = NULL;
-    *block_np = free_listp;
+    *block_np = freel_hp;
 
-    if (free_listp != NULL) {
-        block_t** free_listp_pp = get_prevp(free_listp);
-        *free_listp_pp = block;
+    if (freel_hp != NULL) {
+        block_t** freel_hp_pp = get_prevp(freel_hp);
+        *freel_hp_pp = block;
     }
-    free_listp = block;
+    freel_hp = block;
 }
 
 void pop_from_freel(block_t* block) {
 
     dbg_printf("pop_from_freel::entry, ");
 
-    if (free_listp == block) {
-        if (*get_nextp(block) != NULL) free_listp = *get_nextp(block);
-        else free_listp = NULL;
+    if (freel_hp == block) {
+        freel_hp = *get_nextp(block);
     }
     else {
         block_t** block_pp_np = get_nextp(*get_prevp(block));
@@ -651,7 +653,7 @@ void print_heap() {
 void print_freelist() {
     dbg_printf("  print_freelist::entry\n\n");
     block_t* block;
-    for (block = free_listp; block != NULL; block = *get_nextp(block)) {
+    for (block = freel_hp; block != NULL; block = *get_nextp(block)) {
         dbg_printf("  @(%lx)->head(%lu):@(%lx)->prev(%lx):@(%lx)->next(%lx):\
             @(%lx)->footer(%lu)\n",
             (word_t)block, (word_t)block->header,
@@ -694,66 +696,66 @@ bool mm_checkblock(block_t* block) {
 }
 
 bool mm_checkheap(int lineno) {
-    // dbg_printf("  mm_checkheap::line(%d)\n", lineno);
+    dbg_printf("  mm_checkheap::line(%d)\n", lineno);
 
-    // print_heap();
-    // print_freelist();
+    print_heap();
+    print_freelist();
 
-    // word_t* pf = find_prev_footer(heap_listp);
+    word_t* pf = find_prev_footer(heap_listp);
 
-    // if (extract_size(*pf) != 0) {
-    //     dbg_printf("  mm_ch::prologue footer(@%p) size != 0\n", &pf);
-    //     return false;
-    // }
-    // if (!extract_alloc(*pf)) {
-    //     dbg_printf("  mm_ch::prologue footer(@%p) alloc unset\n", &pf);
-    //     return false;
-    // }
+    if (extract_size(*pf) != 0) {
+        dbg_printf("  mm_ch::prologue footer(@%p) size != 0\n", &pf);
+        return false;
+    }
+    if (!extract_alloc(*pf)) {
+        dbg_printf("  mm_ch::prologue footer(@%p) alloc unset\n", &pf);
+        return false;
+    }
 
-    // block_t* block;
-    // for (block = heap_listp; get_size(block) > 0; block = find_next(block)) {
-    //     if (!mm_checkblock(block)) return false;
-    // }
-    // if (get_size(block) != 0) {
-    //     dbg_printf("  mm_ch::epilogue header(@%p) size != 0\n", block);
-    //     return false;
-    // }
-    // if (!get_alloc(block)) {
-    //     dbg_printf("  mm_ch::epilogue header(@%p) alloc unset\n", block);
-    //     return false;
-    // }
+    block_t* block;
+    for (block = heap_listp; get_size(block) > 0; block = find_next(block)) {
+        if (!mm_checkblock(block)) return false;
+    }
+    if (get_size(block) != 0) {
+        dbg_printf("  mm_ch::epilogue header(@%p) size != 0\n", block);
+        return false;
+    }
+    if (!get_alloc(block)) {
+        dbg_printf("  mm_ch::epilogue header(@%p) alloc unset\n", block);
+        return false;
+    }
 
-    // int free_lsize = 0;
-    // int free_hsize = 0;
+    int free_lsize = 0;
+    int free_hsize = 0;
 
-    // for (block = free_listp; block != NULL; block = *get_nextp(block)) {
-    //     free_lsize++;
-    //     if (*get_nextp(block) != NULL && !in_heap(*get_nextp(block))) {
-    //         dbg_printf("  mm_cfl::(%p)->next not in heap\n", *get_nextp(block));
-    //         return false;
-    //     }
-    //     if (*get_prevp(block) != NULL && !in_heap(*get_prevp(block))) {
-    //         dbg_printf("  mm_cfl::(%p)->prev not in heap\n", *get_prevp(block));
-    //         return false;
-    //     }
-    //     if (*get_nextp(block) != NULL && block != *get_prevp(*get_nextp(block))) {
-    //         dbg_printf("  mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\n",
-    //             block, *get_nextp(block),
-    //             *get_nextp(block), *get_prevp(*get_nextp(block)));
-    //         return false;
-    //     }
-    // }
+    for (block = freel_hp; block != NULL; block = *get_nextp(block)) {
+        free_lsize++;
+        if (*get_nextp(block) != NULL && !in_heap(*get_nextp(block))) {
+            dbg_printf("  mm_cfl::(%p)->next not in heap\n", *get_nextp(block));
+            return false;
+        }
+        if (*get_prevp(block) != NULL && !in_heap(*get_prevp(block))) {
+            dbg_printf("  mm_cfl::(%p)->prev not in heap\n", *get_prevp(block));
+            return false;
+        }
+        if (*get_nextp(block) != NULL && block != *get_prevp(*get_nextp(block))) {
+            dbg_printf("  mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\n",
+                block, *get_nextp(block),
+                *get_nextp(block), *get_prevp(*get_nextp(block)));
+            return false;
+        }
+    }
 
-    // for (block = heap_listp; get_size(block) > 0; block = find_next(block)) {
-    //     if (!get_alloc(block)) {
-    //         free_hsize++;
-    //     }
-    // }
+    for (block = heap_listp; get_size(block) > 0; block = find_next(block)) {
+        if (!get_alloc(block)) {
+            free_hsize++;
+        }
+    }
 
-    // if (free_lsize != free_hsize) {
-    //     dbg_printf("  mm_cfl::freelist(%d) != freeheap(%d)\n", free_lsize, free_hsize);
-    //     return false;
-    // }
-    // dbg_printf(" mm_checkheap::exit\n");
+    if (free_lsize != free_hsize) {
+        dbg_printf("  mm_cfl::freelist(%d) != freeheap(%d)\n", free_lsize, free_hsize);
+        return false;
+    }
+    dbg_printf(" mm_checkheap::exit\n");
     return true;
 }

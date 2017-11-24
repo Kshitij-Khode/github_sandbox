@@ -1,46 +1,96 @@
 /*
- * mm.c
- *
- * Name: Kshitij Khode
- * Andrew ID: kkhode
- *
+ ******************************************************************************
+ *                               mm-baseline.c                                *
+ *           64-bit struct-based implicit free list memory allocator          *
+ *                  15-213: Introduction to Computer Systems                  *
+ *                                                                            *
+ *  ************************************************************************  *
+ *                               DOCUMENTATION                                *
+ *                                                                            *
+ *  ** STRUCTURE. **                                                          *
+ *                                                                            *
+ *  Both allocated and free blocks share the same header structure.           *
+ *  HEADER: 8-byte, aligned to 8th byte of an 16-byte aligned heap, where     *
+ *          - The lowest order bit is 1 when the block is allocated, and      *
+ *            0 otherwise.                                                    *
+ *          - The whole 8-byte value with the least significant bit set to 0  *
+ *            represents the size of the block as a size_t                    *
+ *            The size of a block includes the header and footer.             *
+ *  FOOTER: 8-byte, aligned to 0th byte of an 16-byte aligned heap. It        *
+ *          contains the exact copy of the block's header.                    *
+ *  The minimum blocksize is 32 bytes.                                        *
+ *                                                                            *
+ *  Allocated blocks contain the following:                                   *
+ *  HEADER, as defined above.                                                 *
+ *  PAYLOAD: Memory allocated for program to store information.               *
+ *  FOOTER, as defined above.                                                 *
+ *  The size of an allocated block is exactly PAYLOAD + HEADER + FOOTER.      *
+ *                                                                            *
+ *  Free blocks contain the following:                                        *
+ *  HEADER, as defined above.                                                 *
+ *  FOOTER, as defined above.                                                 *
+ *  The size of an unallocated block is at least 32 bytes.                    *
+ *                                                                            *
+ *  Block Visualization.                                                      *
+ *                    block     block+8          block+size-8   block+size    *
+ *  Allocated blocks:   |  HEADER  |  ... PAYLOAD ...  |  FOOTER  |           *
+ *                                                                            *
+ *                    block     block+8          block+size-8   block+size    *
+ *  Unallocated blocks: |  HEADER  |  ... (empty) ...  |  FOOTER  |           *
+ *                                                                            *
+ *  ************************************************************************  *
+ *  ** INITIALIZATION. **                                                     *
+ *                                                                            *
+ *  The following visualization reflects the beginning of the heap.           *
+ *      start            start+8           start+16                           *
+ *  INIT: | PROLOGUE_FOOTER | EPILOGUE_HEADER |                               *
+ *  PROLOGUE_FOOTER: 8-byte footer, as defined above, that simulates the      *
+ *                    end of an allocated block. Also serves as padding.      *
+ *  EPILOGUE_HEADER: 8-byte block indicating the end of the heap.             *
+ *                   It simulates the beginning of an allocated block         *
+ *                   The epilogue header is moved when the heap is extended.  *
+ *                                                                            *
+ *  ************************************************************************  *
+ *  ** BLOCK ALLOCATION. **                                                   *
+ *                                                                            *
+ *  Upon memory request of size S, a block of size S + dsize, rounded up to   *
+ *  16 bytes, is allocated on the heap, where dsize is 2*8 = 16.              *
+ *  Selecting the block for allocation is performed by finding the first      *
+ *  block that can fit the content based on a first-fit or next-fit search    *
+ *  policy.                                                                   *
+ *  The search starts from the beginning of the heap pointed by heap_listp.   *
+ *  It sequentially goes through each block in the implicit free list,        *
+ *  the end of the heap, until either                                         *
+ *  - A sufficiently-large unallocated block is found, or                     *
+ *  - The end of the implicit free list is reached, which occurs              *
+ *    when no sufficiently-large unallocated block is available.              *
+ *  In case that a sufficiently-large unallocated block is found, then        *
+ *  that block will be used for allocation. Otherwise--that is, when no       *
+ *  sufficiently-large unallocated block is found--then more unallocated      *
+ *  memory of size chunksize or requested size, whichever is larger, is       *
+ *  requested through mem_sbrk, and the search is redone.                     *
+ *                                                                            *
+ *  ************************************************************************  *
+ *  ** ADVICE FOR STUDENTS. **                                                *
+ *  Step 0: Please read the writeup!                                          *
+ *  Write your heap checker. Write your heap checker. Write. Heap. checker.   *
+ *  Good luck, and have fun!                                                  *
+ *                                                                            *
+ ******************************************************************************
  */
-#include <assert.h>
+
+/* Do not change the following! */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <stddef.h>
+#include <assert.h>
+#include <stddef.h>
 
 #include "mm.h"
 #include "memlib.h"
 
-/*
- * If you want debugging output, uncomment the following.  Be sure not
- * to have debugging enabled in your final submission
- */
-// #define DEBUG
-
-#ifdef DEBUG
-/* When debugging is enabled, the underlying functions get called */
-#define dbg_printf(...) printf(__VA_ARGS__)
-#define dbg_assert(...) assert(__VA_ARGS__)
-#define dbg_requires(...) assert(__VA_ARGS__)
-#define dbg_ensures(...) assert(__VA_ARGS__)
-#define dbg_checkheap(...) mm_checkheap(__VA_ARGS__)
-#define dbg_printheap(...) print_heap(__VA_ARGS__)
-#else
-/* When debugging is disabled, no code gets generated */
-#define dbg_printf(...)
-#define dbg_assert(...)
-#define dbg_requires(...)
-#define dbg_ensures(...)
-#define dbg_checkheap(...)
-#define dbg_printheap(...)
-#endif
-
-/* do not change the following! */
 #ifdef DRIVER
 /* create aliases for driver tests */
 #define malloc mm_malloc
@@ -51,8 +101,28 @@
 #define memcpy mem_memcpy
 #endif /* def DRIVER */
 
-/* What is the correct alignment? */
-#define ALIGNMENT 16
+/* You can change anything from here onward */
+
+/*
+ * If DEBUG is defined, enable printing on dbg_printf and contracts.
+ * Debugging macros, with names beginning "dbg_" are allowed.
+ * You may not define any other macros having arguments.
+ */
+// #define DEBUG // uncomment this line to enable debugging
+
+#ifdef DEBUG
+/* When debugging is enabled, these form aliases to useful functions */
+#define dbg_printf(...) printf(__VA_ARGS__)
+#define dbg_requires(...) assert(__VA_ARGS__)
+#define dbg_assert(...) assert(__VA_ARGS__)
+#define dbg_ensures(...) assert(__VA_ARGS__)
+#else
+/* When debugging is disnabled, no code gets generated for these */
+#define dbg_printf(...)
+#define dbg_requires(...)
+#define dbg_assert(...)
+#define dbg_ensures(...)
+#endif
 
 /* Basic constants */
 typedef uint64_t word_t;
@@ -79,6 +149,7 @@ typedef struct block
      * position is unknown
      */
 } block_t;
+
 
 /* Global variables */
 /* Pointer to first block */
@@ -111,26 +182,27 @@ static block_t *find_next(block_t *block);
 static word_t *find_prev_footer(block_t *block);
 static block_t *find_prev(block_t *block);
 
-static block_t *payload_to_header(void *bp);
-static void *header_to_payload(block_t *block);
-static bool in_heap(const void *p);
-static bool aligned(const void *p);
-static size_t align(size_t x);
-
 bool mm_checkheap(int lineno);
 
-bool mm_init(void) {
-    // Create the initial empty heap
+/*
+ * mm_init: initializes the heap; it is run once when heap_start == NULL.
+ *          prior to any extend_heap operation, this is the heap:
+ *              start            start+8           start+16
+ *          INIT: | PROLOGUE_FOOTER | EPILOGUE_HEADER |
+ * heap_listp ends up pointing to the epilogue header.
+ */
+bool mm_init(void) 
+{
+    // Create the initial empty heap 
     word_t *start = (word_t *)(mem_sbrk(2*wsize));
 
-    if (start == (void *)-1)
+    if (start == (void *)-1) 
     {
         return false;
     }
 
     start[0] = pack(0, true); // Prologue footer
     start[1] = pack(0, true); // Epilogue header
-
     // Heap starts with first block header (epilogue)
     heap_listp = (block_t *) &(start[1]);
 
@@ -142,9 +214,21 @@ bool mm_init(void) {
     return true;
 }
 
-void *malloc (size_t size) {
+/*
+ * malloc: allocates a block with size at least (size + dsize), rounded up to
+ *         the nearest 16 bytes, with a minimum of 2*dsize. Seeks a
+ *         sufficiently-large unallocated block on the heap to be allocated.
+ *         If no such block is found, extends heap by the maximum between
+ *         chunksize and (size + dsize) rounded up to the nearest 16 bytes,
+ *         and then attempts to allocate all, or a part of, that memory.
+ *         Returns NULL on failure, otherwise returns a pointer to such block.
+ *         The allocated block will not be used for further allocations until
+ *         freed.
+ */
+void *malloc(size_t size) 
+{
     dbg_requires(mm_checkheap);
-
+    
     size_t asize;      // Adjusted block size
     size_t extendsize; // Amount to extend heap if no fit is found
     block_t *block;
@@ -169,7 +253,7 @@ void *malloc (size_t size) {
 
     // If no fit is found, request more memory, and then and place the block
     if (block == NULL)
-    {
+    {  
         extendsize = max(asize, chunksize);
         block = extend_heap(extendsize);
         if (block == NULL) // extend_heap returns an error
@@ -184,39 +268,53 @@ void *malloc (size_t size) {
 
     dbg_printf("Malloc size %zd on address %p.\n", size, bp);
     dbg_ensures(mm_checkheap);
-
     return bp;
-}
+} 
 
-void free (void *ptr) {
-    if (ptr == NULL)
+/*
+ * free: Frees the block such that it is no longer allocated while still
+ *       maintaining its size. Block will be available for use on malloc.
+ */
+void free(void *bp)
+{
+    if (bp == NULL)
     {
         return;
     }
 
-    block_t *block = payload_to_header(ptr);
+    block_t *block = payload_to_header(bp);
     size_t size = get_size(block);
 
     write_header(block, size, false);
     write_footer(block, size, false);
 
     coalesce(block);
+
 }
 
-void *realloc(void *oldptr, size_t size) {
-    block_t *block = payload_to_header(oldptr);
+/*
+ * realloc: returns a pointer to an allocated region of at least size bytes:
+ *          if ptrv is NULL, then call malloc(size);
+ *          if size == 0, then call free(ptr) and returns NULL;
+ *          else allocates new region of memory, copies old data to new memory,
+ *          and then free old block. Returns old block if realloc fails or
+ *          returns new pointer on success.
+ */
+void *realloc(void *ptr, size_t size)
+{
+    block_t *block = payload_to_header(ptr);
     size_t copysize;
     void *newptr;
 
     // If size == 0, then free block and return NULL
     if (size == 0)
     {
-        free(oldptr);
+        free(ptr);
         return NULL;
     }
 
-    // If oldptr is NULL, then equivalent to malloc
-    if (oldptr == NULL)
+    // If ptr is NULL, then equivalent to malloc
+    if (ptr == NULL)
     {
         return malloc(size);
     }
@@ -235,22 +333,28 @@ void *realloc(void *oldptr, size_t size) {
     {
         copysize = size;
     }
-    memcpy(newptr, oldptr, copysize);
+    memcpy(newptr, ptr, copysize);
 
     // Free the old block
-    free(oldptr);
+    free(ptr);
 
     return newptr;
 }
 
-void *calloc (size_t nmemb, size_t size) {
+/*
+ * calloc: Allocates a block with size at least (elements * size + dsize)
+ *         through malloc, then initializes all bits in allocated memory to 0.
+ *         Returns NULL on failure.
+ */
+void *calloc(size_t nmemb, size_t size)
+{
     void *bp;
     size_t asize = nmemb * size;
 
     if (asize/nmemb != size)
     // Multiplication overflowed
     return NULL;
-
+    
     bp = malloc(asize);
     if (bp == NULL)
     {
@@ -270,7 +374,7 @@ void *calloc (size_t nmemb, size_t size) {
  *              coalescing the newly-created block with previous free block, if
  *              applicable, or NULL in failure.
  */
-static block_t *extend_heap(size_t size)
+static block_t *extend_heap(size_t size) 
 {
     void *bp;
 
@@ -280,8 +384,8 @@ static block_t *extend_heap(size_t size)
     {
         return NULL;
     }
-
-    // Initialize free block header/footer
+    
+    // Initialize free block header/footer 
     block_t *block = payload_to_header(bp);
     write_header(block, size, false);
     write_footer(block, size, false);
@@ -298,7 +402,7 @@ static block_t *extend_heap(size_t size)
  *           Returns pointer to the coalesced block. After coalescing, the
  *           immediate contiguous previous and next blocks must be allocated.
  */
-static block_t *coalesce(block_t * block)
+static block_t *coalesce(block_t * block) 
 {
     block_t *block_next = find_next(block);
     block_t *block_prev = find_prev(block);
@@ -361,7 +465,7 @@ static void place(block_t *block, size_t asize)
     }
 
     else
-    {
+    { 
         write_header(block, csize, true);
         write_footer(block, csize, true);
     }
@@ -534,88 +638,25 @@ static void *header_to_payload(block_t *block)
     return (void *)(block->payload);
 }
 
-/*
- * Return whether the pointer is in the heap.
- * May be useful for debugging.
- */
-static bool in_heap(const void *p) {
-    return p <= mem_heap_hi() && p >= mem_heap_lo();
-}
-
-/*
- * Return whether the pointer is aligned.
- * May be useful for debugging.
- */
-static bool aligned(const void *p) {
-    size_t ip = (size_t) p;
-    return align(ip) == ip;
-}
-
-/* rounds up to the nearest multiple of ALIGNMENT */
-static size_t align(size_t x) {
-    return ALIGNMENT * ((x+ALIGNMENT-1)/ALIGNMENT);
-}
-
-bool mm_checkblock(block_t* block) {
-    word_t* fp = (word_t*)((block->payload) + get_size(block) - dsize);
-
-    /* check epilogue & prologue */
-    if (aligned(block)) {
-        printf("  kbk_debug::mm_cb::block(@%p) is not aligned\n", block);
-        return false;
-    }
-    else if (!in_heap(block)) {
-        printf("  kbk_debug::mm_cb::block(@%p) not in heap\n", block);
-        return false;
-    }
-    else if (get_size(block) != extract_size(*fp)) {
-        printf("  kbk_debug::mm_cb::block(@%p) header footer size don't match\n", block);
-        return false;
-    }
-    else if (get_alloc(block) != extract_alloc(*fp)) {
-        printf("  kbk_debug::mm_cb::block(@%p) header footer alloc don't match\n", block);
-        return false;
-    }
-
-
-    block_t* nb = find_next(block);
-    if (get_size(nb) > 0 && get_alloc(block) == 0 && get_alloc(nb) == 0) {
-        printf("  kbk_debug::mm_cb::free blocks(@%p & @%p) aren't coalesced\n", block, nb);
-        return false;
-    }
-    return true;
-}
-
 /* mm_checkheap: checks the heap for correctness; returns true if
  *               the heap is correct, and false otherwise.
  *               can call this function using mm_checkheap(__LINE__);
  *               to identify the line number of the call site.
  */
-bool mm_checkheap(int lineno) {
-    printf("  kbk_debug::mm_checkheap::line(%d)\n", lineno);
+bool mm_checkheap(int lineno)  
+{ 
+    /* you will need to write the heap checker yourself. As a filler:
+     * one guacamole is equal to 6.02214086 x 10**23 guacas.
+     * one might even call it
+     * the avocado's number.
+     *
+     * Internal use only: If you mix guacamole on your bibimbap, 
+     * do you eat it with a pair of chopsticks, or with a spoon? 
+     * (Delete these lines!)
+     */
 
-    word_t* pf = find_prev_footer(heap_listp);
-    if (extract_size(*pf) != 0) {
-        printf("  kbk_debug::mm_cb::prologue footer(@%p) size != 0\n", &pf);
-        return false;
-    }
-    else if (!extract_alloc(*pf)) {
-        printf("  kbk_debug::mm_cb::prologue footer(@%p) alloc unset\n", &pf);
-        return false;
-    }
-
-    block_t* block;
-    for (block = heap_listp; get_size(block) > 0; block = find_next(block)) {
-        if (!mm_checkblock(block)) return false;
-    }
-    if (get_size(block) != 0) {
-        printf("  kbk_debug::mm_cb::epilogue header(@%p) size != 0\n", block);
-        return false;
-    }
-    else if (!get_alloc(block)) {
-        printf("  kbk_debug::mm_cb::epilogue header(@%p) alloc unset\n", block);
-        return false;
-    }
+    (void)lineno; // delete this line; it's a placeholder so that the compiler
+                  // will not warn you about unused variable.
     return true;
 
 }

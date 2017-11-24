@@ -7,8 +7,6 @@ CC = gcc
 CLANG = clang
 # Change this to -O0 (big-Oh, numeral zero) if you need to use a debugger on your code
 COPT = -O3
-# COPT = -O0
-
 CFLAGS = -Wall -Wextra -Werror $(COPT) -g -DDRIVER -Wno-unused-function -Wno-unused-parameter
 LIBS = -lm -lrt
 
@@ -17,7 +15,7 @@ NOBJS = mdriver.o mm-native.o $(COBJS)
 EOBJS = mdriver-sparse.o mm-emulate.o $(COBJS)
 
 MC = ./macro-check.pl
-MCHECK = $(MC)
+MCHECK = $(MC) 
 
 all: mdriver mdriver-emulate
 
