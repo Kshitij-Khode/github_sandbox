@@ -90,7 +90,7 @@ static block_t* heap_hp = NULL;
 static block_t* heap_tp = NULL;
 static block_t* seg_hps[SEG_BINS];
 static block_t* seg_tps[SEG_BINS];
-static size_t seg_size[] = {8, 16, 32, 64};
+static size_t seg_size[] = {32, 48, 64, 80};
 
 /* Function prototypes for internal helper routines */
 static block_t *extend_heap(size_t size);
@@ -139,7 +139,7 @@ bool mm_checkblock(block_t* block);
 
 bool mm_init(void) {
 
-    dbg_printf("mm_init::entry, ");
+    dbg_printf("mm_init::entry\n");
 
     heap_hp = NULL;
     heap_tp = NULL;
@@ -169,7 +169,7 @@ bool mm_init(void) {
 
 void *malloc (size_t size) {
 
-    dbg_printf("malloc:entry(%lu), ", size);
+    dbg_printf("malloc:entry(%lu)\n", size);
 
     dbg_requires(mm_checkheap);
 
@@ -190,7 +190,7 @@ void *malloc (size_t size) {
     }
 
     // Adjust block size to include overhead and to meet alignment requirements
-    asize = round_up(size, dsize) + dsize;
+    asize = max(round_up(size+wsize, dsize), min_block_size);
 
     // Search the free list for a fit
     block = find_fit(asize);
@@ -217,7 +217,7 @@ void *malloc (size_t size) {
 
 void free (void *ptr) {
 
-    dbg_printf("free::entry(%p), ", ptr);
+    dbg_printf("free::entry(%p)\n", ptr);
 
     if (ptr == NULL) {
         return;
@@ -229,12 +229,19 @@ void free (void *ptr) {
     write_header(block, size, false);
     write_footer(block, size, false);
 
+    dbg_printheap();
+
     block_t* nb = find_next(block);
     if (get_size(nb) > 0) {
         set_palloc(nb, false);
     }
 
+    dbg_printheap();
+
     push_to_freel(block);
+
+    dbg_printheap();
+
     coalesce(block);
 }
 
@@ -309,12 +316,13 @@ void *calloc (size_t nmemb, size_t size) {
  */
 static block_t *extend_heap(size_t size) {
 
-    dbg_printf("extend_heap::entry, ");
+    dbg_printf("extend_heap::entry\n");
 
     void *bp;
 
     // Allocate an even number of words to maintain alignment
     size = round_up(size, dsize);
+
     if ((bp = mem_sbrk(size)) == (void *)-1) {
         return NULL;
     }
@@ -340,7 +348,8 @@ static block_t *extend_heap(size_t size) {
 // [KBK:KBK:?] Remove unncess NULL'ing, removal of footers and unsetting pallocs
 static block_t *coalesce(block_t * block) {
 
-    dbg_printf("coalesce::entry(%p), ", block);
+    dbg_printf("coalesce::entry(%p)\n", block);
+    dbg_printheap();
 
     block_t* block_prev;
     block_t* block_next = find_next(block);
@@ -389,8 +398,6 @@ static block_t *coalesce(block_t * block) {
         block = block_prev;
     }
     else {
-        dbg_printf("  prev_alloc:%d, next_alloc:%d\n", prev_alloc, next_alloc);
-        dbg_printf("  b:%p, bp:%p, bn:%p\n", block, block_prev, block_next);
         pop_from_freel(block);
         pop_from_freel(block_prev);
         pop_from_freel(block_next);
@@ -427,7 +434,7 @@ static block_t *coalesce(block_t * block) {
  */
 static void place(block_t *block, size_t asize) {
 
-    dbg_printf("place::entry, ");
+    dbg_printf("place::entry:asize:%lu\n", asize);
 
     pop_from_freel(block);
     write_footer(block, 0, false);
@@ -458,7 +465,7 @@ static void place(block_t *block, size_t asize) {
  */
 static block_t *find_fit(size_t asize) {
 
-    dbg_printf("find_fit::entry, ");
+    dbg_printf("find_fit::entry\n");
 
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
@@ -520,12 +527,12 @@ static size_t get_size(block_t *block)
 
 /*
  * get_payload_size: returns the payload size of a given block, equal to
- *                   the entire block size minus the header and footer sizes.
+ *                   the entire block size minus the header size.
  */
 static word_t get_payload_size(block_t *block)
 {
     size_t asize = get_size(block);
-    return asize - dsize;
+    return asize - wsize;
 }
 
 /*
@@ -552,7 +559,7 @@ static bool get_alloc(block_t *block)
  */
 static void write_header(block_t *block, size_t size, bool alloc)
 {
-    block->header = pack(size, alloc) | (block->header & palloc_mask);
+    block->header = (pack(size, alloc) | (block->header & palloc_mask));
 }
 
 /*
@@ -662,10 +669,9 @@ bool get_palloc(block_t* block) {
     return (bool)(block->header & palloc_mask);
 }
 
-
 void push_to_freel(block_t* block) {
 
-    dbg_printf("push_to_freel::entry(%p), ", block);
+    dbg_printf("push_to_freel::entry(%p)\n", block);
 
     size_t bsize = get_size(block);
     int sb;
@@ -688,7 +694,7 @@ void push_to_freel(block_t* block) {
 
 void pop_from_freel(block_t* block) {
 
-    dbg_printf("pop_from_freel::entry(%p), ", block);
+    dbg_printf("pop_from_freel::entry(%p)\n", block);
 
     block_t** block_np = get_nextp(block);
     block_t** block_pp = get_prevp(block);
@@ -719,7 +725,7 @@ void pop_from_freel(block_t* block) {
 }
 
 void print_heap() {
-    dbg_printf("  print_heap::entry::heap_tp(%p)\n\n", heap_tp);
+    dbg_printf("\n  print_heap::entry::heap_tp(%p)\n\n", heap_tp);
     dbg_printf("  @prol(%09lx)->footer(%09lx)\n",
         (word_t)find_prev_footer(heap_hp),
         *find_prev_footer(heap_hp));
@@ -757,7 +763,7 @@ void print_heap() {
 }
 
 void print_freelist() {
-    dbg_printf("  print_freelist::entry\n\n");
+    dbg_printf("\n  print_freelist::entry\n\n");
 
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
