@@ -53,7 +53,7 @@
 
 /* What is the correct alignment? */
 #define ALIGNMENT 16
-#define SEG_BINS  5
+#define SEG_BINS  8
 
 /* Basic constants */
 typedef uint64_t word_t;
@@ -91,7 +91,7 @@ static block_t* heap_hp = NULL;
 static block_t* heap_tp = NULL;
 static block_t* seg_hps[SEG_BINS];
 static block_t* seg_tps[SEG_BINS];
-static size_t seg_size[] = {16, 32, 48, 64};
+static size_t seg_size[] = {16, 32, 48, 64, 128, 256, 512};
 
 /* Function prototypes for internal helper routines */
 static block_t *extend_heap(size_t size);

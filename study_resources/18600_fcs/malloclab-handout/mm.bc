@@ -6,16 +6,16 @@ target triple = "x86_64-redhat-linux-gnu"
 
 @heap_hp = internal unnamed_addr global %struct.block* null, align 8
 @heap_tp = internal unnamed_addr global %struct.block* null, align 8
-@seg_hps = internal global [5 x %struct.block*] zeroinitializer, align 16
-@seg_tps = internal global [5 x %struct.block*] zeroinitializer, align 16
-@seg_size = internal unnamed_addr constant [4 x i64] [i64 16, i64 32, i64 48, i64 64], align 16
+@seg_hps = internal global [8 x %struct.block*] zeroinitializer, align 16
+@seg_tps = internal global [8 x %struct.block*] zeroinitializer, align 16
+@seg_size = internal unnamed_addr constant [7 x i64] [i64 16, i64 32, i64 48, i64 64, i64 128, i64 256, i64 512], align 16
 
 ; Function Attrs: nounwind uwtable
 define zeroext i1 @mm_init() #0 {
   store %struct.block* null, %struct.block** @heap_hp, align 8, !dbg !369, !tbaa !370
   store %struct.block* null, %struct.block** @heap_tp, align 8, !dbg !374, !tbaa !370
-  %1 = tail call i8* @mem_memset(i8* bitcast ([5 x %struct.block*]* @seg_hps to i8*), i32 0, i64 40) #5, !dbg !375
-  %2 = tail call i8* @mem_memset(i8* bitcast ([5 x %struct.block*]* @seg_tps to i8*), i32 0, i64 40) #5, !dbg !376
+  %1 = tail call i8* @mem_memset(i8* bitcast ([8 x %struct.block*]* @seg_hps to i8*), i32 0, i64 64) #5, !dbg !375
+  %2 = tail call i8* @mem_memset(i8* bitcast ([8 x %struct.block*]* @seg_tps to i8*), i32 0, i64 64) #5, !dbg !376
   %3 = tail call i8* @mem_sbrk(i64 16) #5, !dbg !377
   tail call void @llvm.dbg.value(metadata !{i64* %6}, i64 0, metadata !10), !dbg !377
   %4 = icmp eq i8* %3, inttoptr (i64 -1 to i8*), !dbg !378
@@ -137,17 +137,17 @@ define internal fastcc %struct.block* @extend_heap(i64 %size) #0 {
 ; <label>:33                                      ; preds = %37
   %34 = add nsw i32 %sb.03.i, 1, !dbg !473
   %35 = trunc i64 %indvars.iv.next.i to i32, !dbg !473
-  %36 = icmp slt i32 %35, 5, !dbg !473
+  %36 = icmp slt i32 %35, 8, !dbg !473
   br i1 %36, label %37, label %push_nsegl.exit, !dbg !473
 
 ; <label>:37                                      ; preds = %33, %31
   %indvars.iv.i = phi i64 [ 0, %31 ], [ %indvars.iv.next.i, %33 ]
   %sb.03.i = phi i32 [ 0, %31 ], [ %34, %33 ]
-  %38 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !474
+  %38 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !474
   %39 = load i64* %38, align 8, !dbg !474, !tbaa !386
   %40 = icmp ule i64 %32, %39, !dbg !474
   %41 = trunc i64 %indvars.iv.i to i32, !dbg !474
-  %42 = icmp eq i32 %41, 4, !dbg !474
+  %42 = icmp eq i32 %41, 7, !dbg !474
   %or.cond.i = or i1 %40, %42, !dbg !474
   %indvars.iv.next.i = add nuw nsw i64 %indvars.iv.i, 1, !dbg !473
   br i1 %or.cond.i, label %43, label %33, !dbg !474
@@ -161,7 +161,7 @@ define internal fastcc %struct.block* @extend_heap(i64 %size) #0 {
   br i1 %45, label %._crit_edge.i, label %46, !dbg !481
 
 ._crit_edge.i:                                    ; preds = %43
-  %.pre.i = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !482
+  %.pre.i = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !482
   br label %51, !dbg !481
 
 ; <label>:46                                      ; preds = %43
@@ -169,7 +169,7 @@ define internal fastcc %struct.block* @extend_heap(i64 %size) #0 {
   %47 = getelementptr inbounds i8* %3, i64 8, !dbg !486
   %48 = bitcast i8* %47 to %struct.block**, !dbg !486
   tail call void @llvm.dbg.value(metadata !{%struct.block** %48}, i64 0, metadata !487), !dbg !484
-  %49 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !488
+  %49 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !488
   %50 = load %struct.block** %49, align 8, !dbg !488, !tbaa !370
   store %struct.block* %50, %struct.block** %48, align 8, !dbg !488, !tbaa !370
   br label %51, !dbg !489
@@ -190,7 +190,7 @@ define internal fastcc %struct.block* @extend_heap(i64 %size) #0 {
 
 ; <label>:57                                      ; preds = %54, %51
   store %struct.block* %7, %struct.block** %.pre-phi.i, align 8, !dbg !497, !tbaa !370
-  %58 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !498
+  %58 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !498
   %59 = load %struct.block** %58, align 8, !dbg !498, !tbaa !370
   %60 = icmp eq %struct.block* %59, null, !dbg !498
   br i1 %60, label %61, label %push_nsegl.exit, !dbg !498
@@ -231,8 +231,8 @@ define i8* @mm_malloc(i64 %size) #0 {
 ; <label>:3                                       ; preds = %0
   store %struct.block* null, %struct.block** @heap_hp, align 8, !dbg !529, !tbaa !370
   store %struct.block* null, %struct.block** @heap_tp, align 8, !dbg !532, !tbaa !370
-  %4 = tail call i8* @mem_memset(i8* bitcast ([5 x %struct.block*]* @seg_hps to i8*), i32 0, i64 40) #5, !dbg !533
-  %5 = tail call i8* @mem_memset(i8* bitcast ([5 x %struct.block*]* @seg_tps to i8*), i32 0, i64 40) #5, !dbg !534
+  %4 = tail call i8* @mem_memset(i8* bitcast ([8 x %struct.block*]* @seg_hps to i8*), i32 0, i64 64) #5, !dbg !533
+  %5 = tail call i8* @mem_memset(i8* bitcast ([8 x %struct.block*]* @seg_tps to i8*), i32 0, i64 64) #5, !dbg !534
   %6 = tail call i8* @mem_sbrk(i64 16) #5, !dbg !535
   %7 = icmp eq i8* %6, inttoptr (i64 -1 to i8*), !dbg !536
   br i1 %7, label %mm_init.exit, label %8, !dbg !536
@@ -271,16 +271,16 @@ mm_init.exit:                                     ; preds = %8, %3, %0
 
 ; <label>:20                                      ; preds = %.loopexit.i, %15
   %indvars.iv.i = phi i64 [ 0, %15 ], [ %indvars.iv.next.i, %.loopexit.i ]
-  %21 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !563
+  %21 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !563
   %22 = load i64* %21, align 8, !dbg !563, !tbaa !386
   %23 = icmp uge i64 %22, %19, !dbg !563
   %24 = trunc i64 %indvars.iv.i to i32, !dbg !563
-  %25 = icmp eq i32 %24, 4, !dbg !563
+  %25 = icmp eq i32 %24, 7, !dbg !563
   %or.cond.i = or i1 %23, %25, !dbg !563
   br i1 %or.cond.i, label %26, label %.loopexit.i, !dbg !563
 
 ; <label>:26                                      ; preds = %20
-  %27 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !564
+  %27 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !564
   %block.04.i = load %struct.block** %27, align 8, !dbg !564
   %28 = icmp eq %struct.block* %block.04.i, null, !dbg !564
   br i1 %28, label %.loopexit.i, label %.lr.ph.i, !dbg !564
@@ -305,7 +305,7 @@ mm_init.exit:                                     ; preds = %8, %3, %0
 .loopexit.i:                                      ; preds = %31, %26, %20
   %indvars.iv.next.i = add nuw nsw i64 %indvars.iv.i, 1, !dbg !562
   %35 = trunc i64 %indvars.iv.next.i to i32, !dbg !562
-  %36 = icmp slt i32 %35, 5, !dbg !562
+  %36 = icmp slt i32 %35, 8, !dbg !562
   br i1 %36, label %20, label %37, !dbg !562
 
 ; <label>:37                                      ; preds = %.loopexit.i
@@ -440,17 +440,17 @@ find_fit.exit.thread2:                            ; preds = %.lr.ph.i, %37
 ; <label>:79                                      ; preds = %83
   %80 = add nsw i32 %sb.03.i.i, 1, !dbg !689
   %81 = trunc i64 %indvars.iv.next.i.i to i32, !dbg !689
-  %82 = icmp slt i32 %81, 5, !dbg !689
+  %82 = icmp slt i32 %81, 8, !dbg !689
   br i1 %82, label %83, label %place.exit, !dbg !689
 
 ; <label>:83                                      ; preds = %79, %77
   %indvars.iv.i.i = phi i64 [ 0, %77 ], [ %indvars.iv.next.i.i, %79 ]
   %sb.03.i.i = phi i32 [ 0, %77 ], [ %80, %79 ]
-  %84 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i.i, !dbg !690
+  %84 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i.i, !dbg !690
   %85 = load i64* %84, align 8, !dbg !690, !tbaa !386
   %86 = icmp ule i64 %78, %85, !dbg !690
   %87 = trunc i64 %indvars.iv.i.i to i32, !dbg !690
-  %88 = icmp eq i32 %87, 4, !dbg !690
+  %88 = icmp eq i32 %87, 7, !dbg !690
   %or.cond.i.i = or i1 %86, %88, !dbg !690
   %indvars.iv.next.i.i = add nuw nsw i64 %indvars.iv.i.i, 1, !dbg !689
   br i1 %or.cond.i.i, label %89, label %79, !dbg !690
@@ -466,7 +466,7 @@ find_fit.exit.thread2:                            ; preds = %.lr.ph.i, %37
   br i1 %92, label %._crit_edge.i.i, label %93, !dbg !697
 
 ._crit_edge.i.i:                                  ; preds = %89
-  %.pre.i.i = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i.i, !dbg !698
+  %.pre.i.i = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i.i, !dbg !698
   br label %98, !dbg !697
 
 ; <label>:93                                      ; preds = %89
@@ -475,7 +475,7 @@ find_fit.exit.thread2:                            ; preds = %.lr.ph.i, %37
   %94 = getelementptr inbounds i8* %58, i64 %.sum16.i, !dbg !702
   %95 = bitcast i8* %94 to %struct.block**, !dbg !702
   tail call void @llvm.dbg.value(metadata !{%struct.block** %95}, i64 0, metadata !703) #5, !dbg !700
-  %96 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i.i, !dbg !704
+  %96 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i.i, !dbg !704
   %97 = load %struct.block** %96, align 8, !dbg !704, !tbaa !370
   store %struct.block* %97, %struct.block** %95, align 8, !dbg !704, !tbaa !370
   br label %98, !dbg !705
@@ -496,7 +496,7 @@ find_fit.exit.thread2:                            ; preds = %.lr.ph.i, %37
 
 ; <label>:104                                     ; preds = %101, %98
   store %struct.block* %60, %struct.block** %.pre-phi.i.i, align 8, !dbg !713, !tbaa !370
-  %105 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i.i, !dbg !714
+  %105 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i.i, !dbg !714
   %106 = load %struct.block** %105, align 8, !dbg !714, !tbaa !370
   %107 = icmp eq %struct.block* %106, null, !dbg !714
   br i1 %107, label %108, label %place.exit, !dbg !714
@@ -614,17 +614,17 @@ define void @mm_free(i8* %ptr) #0 {
 ; <label>:19                                      ; preds = %23
   %20 = add nsw i32 %sb.03.i, 1, !dbg !799
   %21 = trunc i64 %indvars.iv.next.i to i32, !dbg !799
-  %22 = icmp slt i32 %21, 5, !dbg !799
+  %22 = icmp slt i32 %21, 8, !dbg !799
   br i1 %22, label %23, label %push_nsegl.exit, !dbg !799
 
 ; <label>:23                                      ; preds = %19, %17
   %indvars.iv.i = phi i64 [ 0, %17 ], [ %indvars.iv.next.i, %19 ]
   %sb.03.i = phi i32 [ 0, %17 ], [ %20, %19 ]
-  %24 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !800
+  %24 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !800
   %25 = load i64* %24, align 8, !dbg !800, !tbaa !386
   %26 = icmp ule i64 %18, %25, !dbg !800
   %27 = trunc i64 %indvars.iv.i to i32, !dbg !800
-  %28 = icmp eq i32 %27, 4, !dbg !800
+  %28 = icmp eq i32 %27, 7, !dbg !800
   %or.cond.i = or i1 %26, %28, !dbg !800
   %indvars.iv.next.i = add nuw nsw i64 %indvars.iv.i, 1, !dbg !799
   br i1 %or.cond.i, label %29, label %19, !dbg !800
@@ -638,7 +638,7 @@ define void @mm_free(i8* %ptr) #0 {
   br i1 %31, label %._crit_edge.i, label %32, !dbg !807
 
 ._crit_edge.i:                                    ; preds = %29
-  %.pre.i = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !808
+  %.pre.i = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !808
   br label %37, !dbg !807
 
 ; <label>:32                                      ; preds = %29
@@ -646,7 +646,7 @@ define void @mm_free(i8* %ptr) #0 {
   %33 = getelementptr inbounds i8* %ptr, i64 8, !dbg !812
   %34 = bitcast i8* %33 to %struct.block**, !dbg !812
   tail call void @llvm.dbg.value(metadata !{%struct.block** %34}, i64 0, metadata !813), !dbg !810
-  %35 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !814
+  %35 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !814
   %36 = load %struct.block** %35, align 8, !dbg !814, !tbaa !370
   store %struct.block* %36, %struct.block** %34, align 8, !dbg !814, !tbaa !370
   br label %37, !dbg !815
@@ -667,7 +667,7 @@ define void @mm_free(i8* %ptr) #0 {
 
 ; <label>:43                                      ; preds = %40, %37
   store %struct.block* %4, %struct.block** %.pre-phi.i, align 8, !dbg !823, !tbaa !370
-  %44 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !824
+  %44 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !824
   %45 = load %struct.block** %44, align 8, !dbg !824, !tbaa !370
   %46 = icmp eq %struct.block* %45, null, !dbg !824
   br i1 %46, label %47, label %push_nsegl.exit, !dbg !824
@@ -711,17 +711,17 @@ define void @push_nsegl(%struct.block* %block) #0 {
 ; <label>:2                                       ; preds = %6
   %3 = add nsw i32 %sb.03, 1, !dbg !833
   %4 = trunc i64 %indvars.iv.next to i32, !dbg !833
-  %5 = icmp slt i32 %4, 5, !dbg !833
+  %5 = icmp slt i32 %4, 8, !dbg !833
   br i1 %5, label %6, label %.loopexit, !dbg !833
 
 ; <label>:6                                       ; preds = %0, %2
   %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %2 ]
   %sb.03 = phi i32 [ 0, %0 ], [ %3, %2 ]
-  %7 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv, !dbg !834
+  %7 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv, !dbg !834
   %8 = load i64* %7, align 8, !dbg !834, !tbaa !386
   %9 = icmp ule i64 %1, %8, !dbg !834
   %10 = trunc i64 %indvars.iv to i32, !dbg !834
-  %11 = icmp eq i32 %10, 4, !dbg !834
+  %11 = icmp eq i32 %10, 7, !dbg !834
   %or.cond = or i1 %9, %11, !dbg !834
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1, !dbg !833
   tail call void @llvm.dbg.value(metadata !{i32 %3}, i64 0, metadata !107), !dbg !833
@@ -737,7 +737,7 @@ define void @push_nsegl(%struct.block* %block) #0 {
   br i1 %15, label %._crit_edge, label %16, !dbg !840
 
 ._crit_edge:                                      ; preds = %12
-  %.pre = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !841
+  %.pre = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !841
   br label %21, !dbg !840
 
 ; <label>:16                                      ; preds = %12
@@ -745,7 +745,7 @@ define void @push_nsegl(%struct.block* %block) #0 {
   %17 = getelementptr inbounds %struct.block* %block, i64 0, i32 1, i64 8, !dbg !845
   %18 = bitcast i8* %17 to %struct.block**, !dbg !845
   tail call void @llvm.dbg.value(metadata !{%struct.block** %18}, i64 0, metadata !114), !dbg !843
-  %19 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !846
+  %19 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !846
   %20 = load %struct.block** %19, align 8, !dbg !846, !tbaa !370
   store %struct.block* %20, %struct.block** %18, align 8, !dbg !846, !tbaa !370
   br label %21, !dbg !847
@@ -766,7 +766,7 @@ define void @push_nsegl(%struct.block* %block) #0 {
 
 ; <label>:27                                      ; preds = %21, %24
   store %struct.block* %block, %struct.block** %.pre-phi, align 8, !dbg !854, !tbaa !370
-  %28 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !855
+  %28 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !855
   %29 = load %struct.block** %28, align 8, !dbg !855, !tbaa !370
   %30 = icmp eq %struct.block* %29, null, !dbg !855
   br i1 %30, label %31, label %.loopexit, !dbg !855
@@ -944,17 +944,17 @@ find_prev.exit:                                   ; preds = %12, %15
 ; <label>:55                                      ; preds = %59
   %56 = add nsw i32 %sb.03.i50, 1, !dbg !973
   %57 = trunc i64 %indvars.iv.next.i52 to i32, !dbg !973
-  %58 = icmp slt i32 %57, 5, !dbg !973
+  %58 = icmp slt i32 %57, 8, !dbg !973
   br i1 %58, label %59, label %push_nsegl.exit56, !dbg !973
 
 ; <label>:59                                      ; preds = %55, %53
   %indvars.iv.i49 = phi i64 [ 0, %53 ], [ %indvars.iv.next.i52, %55 ]
   %sb.03.i50 = phi i32 [ 0, %53 ], [ %56, %55 ]
-  %60 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i49, !dbg !974
+  %60 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i49, !dbg !974
   %61 = load i64* %60, align 8, !dbg !974, !tbaa !386
   %62 = icmp ule i64 %54, %61, !dbg !974
   %63 = trunc i64 %indvars.iv.i49 to i32, !dbg !974
-  %64 = icmp eq i32 %63, 4, !dbg !974
+  %64 = icmp eq i32 %63, 7, !dbg !974
   %or.cond.i51 = or i1 %62, %64, !dbg !974
   %indvars.iv.next.i52 = add nuw nsw i64 %indvars.iv.i49, 1, !dbg !973
   br i1 %or.cond.i51, label %65, label %55, !dbg !974
@@ -969,7 +969,7 @@ find_prev.exit:                                   ; preds = %12, %15
   br i1 %68, label %._crit_edge.i54, label %69, !dbg !981
 
 ._crit_edge.i54:                                  ; preds = %65
-  %.pre.i53 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i49, !dbg !982
+  %.pre.i53 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i49, !dbg !982
   br label %74, !dbg !981
 
 ; <label>:69                                      ; preds = %65
@@ -977,7 +977,7 @@ find_prev.exit:                                   ; preds = %12, %15
   %70 = getelementptr inbounds %struct.block* %block, i64 0, i32 1, i64 8, !dbg !986
   %71 = bitcast i8* %70 to %struct.block**, !dbg !986
   tail call void @llvm.dbg.value(metadata !{%struct.block** %71}, i64 0, metadata !987), !dbg !984
-  %72 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i49, !dbg !988
+  %72 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i49, !dbg !988
   %73 = load %struct.block** %72, align 8, !dbg !988, !tbaa !370
   store %struct.block* %73, %struct.block** %71, align 8, !dbg !988, !tbaa !370
   br label %74, !dbg !989
@@ -998,7 +998,7 @@ find_prev.exit:                                   ; preds = %12, %15
 
 ; <label>:80                                      ; preds = %77, %74
   store %struct.block* %block, %struct.block** %.pre-phi.i55, align 8, !dbg !997, !tbaa !370
-  %81 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i49, !dbg !998
+  %81 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i49, !dbg !998
   %82 = load %struct.block** %81, align 8, !dbg !998, !tbaa !370
   %83 = icmp eq %struct.block* %82, null, !dbg !998
   br i1 %83, label %84, label %push_nsegl.exit56, !dbg !998
@@ -1096,17 +1096,17 @@ find_prev.exit:                                   ; preds = %12, %15
 ; <label>:114                                     ; preds = %118
   %115 = add nsw i32 %sb.03.i34, 1, !dbg !1067
   %116 = trunc i64 %indvars.iv.next.i36 to i32, !dbg !1067
-  %117 = icmp slt i32 %116, 5, !dbg !1067
+  %117 = icmp slt i32 %116, 8, !dbg !1067
   br i1 %117, label %118, label %push_nsegl.exit56, !dbg !1067
 
 ; <label>:118                                     ; preds = %114, %112
   %indvars.iv.i33 = phi i64 [ 0, %112 ], [ %indvars.iv.next.i36, %114 ]
   %sb.03.i34 = phi i32 [ 0, %112 ], [ %115, %114 ]
-  %119 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i33, !dbg !1068
+  %119 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i33, !dbg !1068
   %120 = load i64* %119, align 8, !dbg !1068, !tbaa !386
   %121 = icmp ule i64 %113, %120, !dbg !1068
   %122 = trunc i64 %indvars.iv.i33 to i32, !dbg !1068
-  %123 = icmp eq i32 %122, 4, !dbg !1068
+  %123 = icmp eq i32 %122, 7, !dbg !1068
   %or.cond.i35 = or i1 %121, %123, !dbg !1068
   %indvars.iv.next.i36 = add nuw nsw i64 %indvars.iv.i33, 1, !dbg !1067
   br i1 %or.cond.i35, label %124, label %114, !dbg !1068
@@ -1121,7 +1121,7 @@ find_prev.exit:                                   ; preds = %12, %15
   br i1 %127, label %._crit_edge.i38, label %128, !dbg !1075
 
 ._crit_edge.i38:                                  ; preds = %124
-  %.pre.i37 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i33, !dbg !1076
+  %.pre.i37 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i33, !dbg !1076
   br label %133, !dbg !1075
 
 ; <label>:128                                     ; preds = %124
@@ -1129,7 +1129,7 @@ find_prev.exit:                                   ; preds = %12, %15
   %129 = getelementptr inbounds %struct.block* %block_prev.0, i64 0, i32 1, i64 8, !dbg !1080
   %130 = bitcast i8* %129 to %struct.block**, !dbg !1080
   tail call void @llvm.dbg.value(metadata !{%struct.block** %130}, i64 0, metadata !1081), !dbg !1078
-  %131 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i33, !dbg !1082
+  %131 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i33, !dbg !1082
   %132 = load %struct.block** %131, align 8, !dbg !1082, !tbaa !370
   store %struct.block* %132, %struct.block** %130, align 8, !dbg !1082, !tbaa !370
   br label %133, !dbg !1083
@@ -1150,7 +1150,7 @@ find_prev.exit:                                   ; preds = %12, %15
 
 ; <label>:139                                     ; preds = %136, %133
   store %struct.block* %block_prev.0, %struct.block** %.pre-phi.i39, align 8, !dbg !1091, !tbaa !370
-  %140 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i33, !dbg !1092
+  %140 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i33, !dbg !1092
   %141 = load %struct.block** %140, align 8, !dbg !1092, !tbaa !370
   %142 = icmp eq %struct.block* %141, null, !dbg !1092
   br i1 %142, label %143, label %push_nsegl.exit56, !dbg !1092
@@ -1291,17 +1291,17 @@ find_prev.exit:                                   ; preds = %12, %15
 ; <label>:188                                     ; preds = %192
   %189 = add nsw i32 %sb.03.i, 1, !dbg !1192
   %190 = trunc i64 %indvars.iv.next.i to i32, !dbg !1192
-  %191 = icmp slt i32 %190, 5, !dbg !1192
+  %191 = icmp slt i32 %190, 8, !dbg !1192
   br i1 %191, label %192, label %push_nsegl.exit56, !dbg !1192
 
 ; <label>:192                                     ; preds = %188, %186
   %indvars.iv.i = phi i64 [ 0, %186 ], [ %indvars.iv.next.i, %188 ]
   %sb.03.i = phi i32 [ 0, %186 ], [ %189, %188 ]
-  %193 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !1193
+  %193 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv.i, !dbg !1193
   %194 = load i64* %193, align 8, !dbg !1193, !tbaa !386
   %195 = icmp ule i64 %187, %194, !dbg !1193
   %196 = trunc i64 %indvars.iv.i to i32, !dbg !1193
-  %197 = icmp eq i32 %196, 4, !dbg !1193
+  %197 = icmp eq i32 %196, 7, !dbg !1193
   %or.cond.i = or i1 %195, %197, !dbg !1193
   %indvars.iv.next.i = add nuw nsw i64 %indvars.iv.i, 1, !dbg !1192
   br i1 %or.cond.i, label %198, label %188, !dbg !1193
@@ -1316,7 +1316,7 @@ find_prev.exit:                                   ; preds = %12, %15
   br i1 %201, label %._crit_edge.i, label %202, !dbg !1200
 
 ._crit_edge.i:                                    ; preds = %198
-  %.pre.i = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !1201
+  %.pre.i = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !1201
   br label %207, !dbg !1200
 
 ; <label>:202                                     ; preds = %198
@@ -1324,7 +1324,7 @@ find_prev.exit:                                   ; preds = %12, %15
   %203 = getelementptr inbounds %struct.block* %block_prev.0, i64 0, i32 1, i64 8, !dbg !1205
   %204 = bitcast i8* %203 to %struct.block**, !dbg !1205
   tail call void @llvm.dbg.value(metadata !{%struct.block** %204}, i64 0, metadata !1206), !dbg !1203
-  %205 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !1207
+  %205 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv.i, !dbg !1207
   %206 = load %struct.block** %205, align 8, !dbg !1207, !tbaa !370
   store %struct.block* %206, %struct.block** %204, align 8, !dbg !1207, !tbaa !370
   br label %207, !dbg !1208
@@ -1345,7 +1345,7 @@ find_prev.exit:                                   ; preds = %12, %15
 
 ; <label>:213                                     ; preds = %210, %207
   store %struct.block* %block_prev.0, %struct.block** %.pre-phi.i, align 8, !dbg !1216, !tbaa !370
-  %214 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !1217
+  %214 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv.i, !dbg !1217
   %215 = load %struct.block** %214, align 8, !dbg !1217, !tbaa !370
   %216 = icmp eq %struct.block* %215, null, !dbg !1217
   br i1 %216, label %217, label %push_nsegl.exit56, !dbg !1217
@@ -1521,17 +1521,17 @@ define void @pop_nsegl(%struct.block* %block) #0 {
 ; <label>:2                                       ; preds = %6
   %3 = add nsw i32 %sb.09, 1, !dbg !1277
   %4 = trunc i64 %indvars.iv.next to i32, !dbg !1277
-  %5 = icmp slt i32 %4, 5, !dbg !1277
+  %5 = icmp slt i32 %4, 8, !dbg !1277
   br i1 %5, label %6, label %.loopexit, !dbg !1277
 
 ; <label>:6                                       ; preds = %0, %2
   %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %2 ]
   %sb.09 = phi i32 [ 0, %0 ], [ %3, %2 ]
-  %7 = getelementptr inbounds [4 x i64]* @seg_size, i64 0, i64 %indvars.iv, !dbg !1278
+  %7 = getelementptr inbounds [7 x i64]* @seg_size, i64 0, i64 %indvars.iv, !dbg !1278
   %8 = load i64* %7, align 8, !dbg !1278, !tbaa !386
   %9 = icmp ule i64 %1, %8, !dbg !1278
   %10 = trunc i64 %indvars.iv to i32, !dbg !1278
-  %11 = icmp eq i32 %10, 4, !dbg !1278
+  %11 = icmp eq i32 %10, 7, !dbg !1278
   %or.cond = or i1 %9, %11, !dbg !1278
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1, !dbg !1277
   tail call void @llvm.dbg.value(metadata !{i32 %3}, i64 0, metadata !124), !dbg !1277
@@ -1542,7 +1542,7 @@ define void @pop_nsegl(%struct.block* %block) #0 {
   br i1 %13, label %14, label %45, !dbg !1279
 
 ; <label>:14                                      ; preds = %12
-  %15 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1280
+  %15 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1280
   %16 = load %struct.block** %15, align 8, !dbg !1280, !tbaa !370
   %17 = icmp eq %struct.block* %16, %block, !dbg !1280
   br i1 %17, label %19, label %.preheader, !dbg !1280
@@ -1558,7 +1558,7 @@ define void @pop_nsegl(%struct.block* %block) #0 {
   tail call void @llvm.dbg.value(metadata !{%struct.block** %21}, i64 0, metadata !125), !dbg !1283
   %22 = load %struct.block** %21, align 8, !dbg !1286, !tbaa !370
   store %struct.block* %22, %struct.block** %15, align 8, !dbg !1286, !tbaa !370
-  %23 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1287
+  %23 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1287
   %24 = load %struct.block** %23, align 8, !dbg !1287, !tbaa !370
   %25 = icmp eq %struct.block* %24, %block, !dbg !1287
   br i1 %25, label %26, label %27, !dbg !1287
@@ -1588,7 +1588,7 @@ define void @pop_nsegl(%struct.block* %block) #0 {
   tail call void @llvm.dbg.value(metadata !{%struct.block** %33}, i64 0, metadata !142), !dbg !1297
   %34 = load %struct.block** %33, align 8, !dbg !1300, !tbaa !370
   store %struct.block* %34, %struct.block** %31, align 8, !dbg !1300, !tbaa !370
-  %35 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1301
+  %35 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1301
   %36 = load %struct.block** %35, align 8, !dbg !1301, !tbaa !370
   %37 = icmp eq %struct.block* %36, %block, !dbg !1301
   br i1 %37, label %38, label %39, !dbg !1301
@@ -1648,7 +1648,7 @@ define void @pop_nsegl(%struct.block* %block) #0 {
   br label %63, !dbg !1331
 
 ; <label>:63                                      ; preds = %56, %59
-  %64 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1332
+  %64 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1332
   %65 = load %struct.block** %64, align 8, !dbg !1332, !tbaa !370
   %66 = icmp eq %struct.block* %65, %block, !dbg !1332
   br i1 %66, label %67, label %69, !dbg !1332
@@ -1659,7 +1659,7 @@ define void @pop_nsegl(%struct.block* %block) #0 {
   br label %69, !dbg !1332
 
 ; <label>:69                                      ; preds = %67, %63
-  %70 = getelementptr inbounds [5 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1334
+  %70 = getelementptr inbounds [8 x %struct.block*]* @seg_tps, i64 0, i64 %indvars.iv, !dbg !1334
   %71 = load %struct.block** %70, align 8, !dbg !1334, !tbaa !370
   %72 = icmp eq %struct.block* %71, %block, !dbg !1334
   br i1 %72, label %73, label %75, !dbg !1334
@@ -1711,7 +1711,7 @@ define void @print_heap() #3 {
 ; Function Attrs: nounwind readonly uwtable
 define void @print_nsegl() #3 {
   tail call void @llvm.dbg.value(metadata !2, i64 0, metadata !162), !dbg !1348
-  %block.01 = load %struct.block** getelementptr inbounds ([5 x %struct.block*]* @seg_hps, i64 0, i64 0), align 16, !dbg !1349
+  %block.01 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 0), align 16, !dbg !1349
   %1 = icmp eq %struct.block* %block.01, null, !dbg !1349
   br i1 %1, label %._crit_edge, label %.lr.ph, !dbg !1349
 
@@ -1725,7 +1725,7 @@ define void @print_nsegl() #3 {
   br i1 %4, label %._crit_edge, label %.lr.ph, !dbg !1349
 
 ._crit_edge:                                      ; preds = %.lr.ph, %0
-  %block.01.1 = load %struct.block** getelementptr inbounds ([5 x %struct.block*]* @seg_hps, i64 0, i64 1), align 8, !dbg !1349
+  %block.01.1 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 1), align 8, !dbg !1349
   %5 = icmp eq %struct.block* %block.01.1, null, !dbg !1349
   br i1 %5, label %._crit_edge.1, label %.lr.ph.1, !dbg !1349
 
@@ -1739,7 +1739,7 @@ define void @print_nsegl() #3 {
   br i1 %8, label %._crit_edge.1, label %.lr.ph.1, !dbg !1349
 
 ._crit_edge.1:                                    ; preds = %.lr.ph.1, %._crit_edge
-  %block.01.2 = load %struct.block** getelementptr inbounds ([5 x %struct.block*]* @seg_hps, i64 0, i64 2), align 16, !dbg !1349
+  %block.01.2 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 2), align 16, !dbg !1349
   %9 = icmp eq %struct.block* %block.01.2, null, !dbg !1349
   br i1 %9, label %._crit_edge.2, label %.lr.ph.2, !dbg !1349
 
@@ -1753,7 +1753,7 @@ define void @print_nsegl() #3 {
   br i1 %12, label %._crit_edge.2, label %.lr.ph.2, !dbg !1349
 
 ._crit_edge.2:                                    ; preds = %.lr.ph.2, %._crit_edge.1
-  %block.01.3 = load %struct.block** getelementptr inbounds ([5 x %struct.block*]* @seg_hps, i64 0, i64 3), align 8, !dbg !1349
+  %block.01.3 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 3), align 8, !dbg !1349
   %13 = icmp eq %struct.block* %block.01.3, null, !dbg !1349
   br i1 %13, label %._crit_edge.3, label %.lr.ph.3, !dbg !1349
 
@@ -1767,7 +1767,7 @@ define void @print_nsegl() #3 {
   br i1 %16, label %._crit_edge.3, label %.lr.ph.3, !dbg !1349
 
 ._crit_edge.3:                                    ; preds = %.lr.ph.3, %._crit_edge.2
-  %block.01.4 = load %struct.block** getelementptr inbounds ([5 x %struct.block*]* @seg_hps, i64 0, i64 4), align 16, !dbg !1349
+  %block.01.4 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 4), align 16, !dbg !1349
   %17 = icmp eq %struct.block* %block.01.4, null, !dbg !1349
   br i1 %17, label %._crit_edge.4, label %.lr.ph.4, !dbg !1349
 
@@ -1781,6 +1781,48 @@ define void @print_nsegl() #3 {
   br i1 %20, label %._crit_edge.4, label %.lr.ph.4, !dbg !1349
 
 ._crit_edge.4:                                    ; preds = %.lr.ph.4, %._crit_edge.3
+  %block.01.5 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 5), align 8, !dbg !1349
+  %21 = icmp eq %struct.block* %block.01.5, null, !dbg !1349
+  br i1 %21, label %._crit_edge.5, label %.lr.ph.5, !dbg !1349
+
+.lr.ph.5:                                         ; preds = %._crit_edge.4, %.lr.ph.5
+  %block.02.5 = phi %struct.block* [ %block.0.5, %.lr.ph.5 ], [ %block.01.5, %._crit_edge.4 ]
+  tail call void @llvm.dbg.value(metadata !{%struct.block* %block.02}, i64 0, metadata !1351), !dbg !1352
+  %22 = getelementptr inbounds %struct.block* %block.02.5, i64 0, i32 1, i64 0, !dbg !1353
+  %23 = bitcast i8* %22 to %struct.block**, !dbg !1353
+  %block.0.5 = load %struct.block** %23, align 8, !dbg !1349
+  %24 = icmp eq %struct.block* %block.0.5, null, !dbg !1349
+  br i1 %24, label %._crit_edge.5, label %.lr.ph.5, !dbg !1349
+
+._crit_edge.5:                                    ; preds = %.lr.ph.5, %._crit_edge.4
+  %block.01.6 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 6), align 16, !dbg !1349
+  %25 = icmp eq %struct.block* %block.01.6, null, !dbg !1349
+  br i1 %25, label %._crit_edge.6, label %.lr.ph.6, !dbg !1349
+
+.lr.ph.6:                                         ; preds = %._crit_edge.5, %.lr.ph.6
+  %block.02.6 = phi %struct.block* [ %block.0.6, %.lr.ph.6 ], [ %block.01.6, %._crit_edge.5 ]
+  tail call void @llvm.dbg.value(metadata !{%struct.block* %block.02}, i64 0, metadata !1351), !dbg !1352
+  %26 = getelementptr inbounds %struct.block* %block.02.6, i64 0, i32 1, i64 0, !dbg !1353
+  %27 = bitcast i8* %26 to %struct.block**, !dbg !1353
+  %block.0.6 = load %struct.block** %27, align 8, !dbg !1349
+  %28 = icmp eq %struct.block* %block.0.6, null, !dbg !1349
+  br i1 %28, label %._crit_edge.6, label %.lr.ph.6, !dbg !1349
+
+._crit_edge.6:                                    ; preds = %.lr.ph.6, %._crit_edge.5
+  %block.01.7 = load %struct.block** getelementptr inbounds ([8 x %struct.block*]* @seg_hps, i64 0, i64 7), align 8, !dbg !1349
+  %29 = icmp eq %struct.block* %block.01.7, null, !dbg !1349
+  br i1 %29, label %._crit_edge.7, label %.lr.ph.7, !dbg !1349
+
+.lr.ph.7:                                         ; preds = %._crit_edge.6, %.lr.ph.7
+  %block.02.7 = phi %struct.block* [ %block.0.7, %.lr.ph.7 ], [ %block.01.7, %._crit_edge.6 ]
+  tail call void @llvm.dbg.value(metadata !{%struct.block* %block.02}, i64 0, metadata !1351), !dbg !1352
+  %30 = getelementptr inbounds %struct.block* %block.02.7, i64 0, i32 1, i64 0, !dbg !1353
+  %31 = bitcast i8* %30 to %struct.block**, !dbg !1353
+  %block.0.7 = load %struct.block** %31, align 8, !dbg !1349
+  %32 = icmp eq %struct.block* %block.0.7, null, !dbg !1349
+  br i1 %32, label %._crit_edge.7, label %.lr.ph.7, !dbg !1349
+
+._crit_edge.7:                                    ; preds = %.lr.ph.7, %._crit_edge.6
   ret void, !dbg !1354
 }
 
@@ -2016,7 +2058,7 @@ mm_checkblock.exit:                               ; preds = %29, %23, %27
 .preheader:                                       ; preds = %44, %._crit_edge28
   %indvars.iv = phi i64 [ %indvars.iv.next, %._crit_edge28 ], [ 0, %44 ]
   %freel_size.031 = phi i32 [ %freel_size.1.lcssa, %._crit_edge28 ], [ 0, %44 ]
-  %49 = getelementptr inbounds [5 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1498
+  %49 = getelementptr inbounds [8 x %struct.block*]* @seg_hps, i64 0, i64 %indvars.iv, !dbg !1498
   %block.123 = load %struct.block** %49, align 8, !dbg !1498
   %50 = icmp eq %struct.block* %block.123, null, !dbg !1498
   br i1 %50, label %._crit_edge28, label %.lr.ph27, !dbg !1498
@@ -2108,7 +2150,7 @@ in_heap.exit._crit_edge:                          ; preds = %in_heap.exit
   %freel_size.1.lcssa = phi i32 [ %freel_size.031, %.preheader ], [ %51, %.backedge ], [ %51, %81 ]
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1, !dbg !1535
   %87 = trunc i64 %indvars.iv.next to i32, !dbg !1535
-  %88 = icmp slt i32 %87, 5, !dbg !1535
+  %88 = icmp slt i32 %87, 8, !dbg !1535
   br i1 %88, label %.preheader, label %89, !dbg !1535
 
 ; <label>:89                                      ; preds = %._crit_edge28
@@ -2529,17 +2571,17 @@ attributes #5 = { nounwind }
 !350 = metadata !{i32 786484, i32 0, metadata !5, metadata !"palloc_mask", metadata !"palloc_mask", metadata !"palloc_mask", metadata !5, i32 66, metadata !351, i32 1, i32 1, i64 2, null} ; [ DW_TAG_variable ] [palloc_mask] [line 66] [local] [def]
 !351 = metadata !{i32 786470, null, null, metadata !"", i32 0, i64 0, i64 0, i64 0, i32 0, metadata !12} ; [ DW_TAG_const_type ] [line 0, size 0, align 0, offset 0] [from word_t]
 !352 = metadata !{i32 786484, i32 0, metadata !5, metadata !"pminb_mask", metadata !"pminb_mask", metadata !"pminb_mask", metadata !5, i32 67, metadata !351, i32 1, i32 1, i64 4, null} ; [ DW_TAG_variable ] [pminb_mask] [line 67] [local] [def]
-!353 = metadata !{i32 786484, i32 0, null, metadata !"seg_hps", metadata !"seg_hps", metadata !"", metadata !5, i32 92, metadata !354, i32 1, i32 1, [5 x %struct.block*]* @seg_hps, null} ; [ DW_TAG_variable ] [seg_hps] [line 92] [local] [def]
-!354 = metadata !{i32 786433, null, null, metadata !"", i32 0, i64 320, i64 64, i32 0, i32 0, metadata !25, metadata !355, i32 0, null, null, null} ; [ DW_TAG_array_type ] [line 0, size 320, align 64, offset 0] [from ]
+!353 = metadata !{i32 786484, i32 0, null, metadata !"seg_hps", metadata !"seg_hps", metadata !"", metadata !5, i32 92, metadata !354, i32 1, i32 1, [8 x %struct.block*]* @seg_hps, null} ; [ DW_TAG_variable ] [seg_hps] [line 92] [local] [def]
+!354 = metadata !{i32 786433, null, null, metadata !"", i32 0, i64 512, i64 64, i32 0, i32 0, metadata !25, metadata !355, i32 0, null, null, null} ; [ DW_TAG_array_type ] [line 0, size 512, align 64, offset 0] [from ]
 !355 = metadata !{metadata !356}
-!356 = metadata !{i32 786465, i64 0, i64 5}       ; [ DW_TAG_subrange_type ] [0, 4]
-!357 = metadata !{i32 786484, i32 0, null, metadata !"seg_tps", metadata !"seg_tps", metadata !"", metadata !5, i32 93, metadata !354, i32 1, i32 1, [5 x %struct.block*]* @seg_tps, null} ; [ DW_TAG_variable ] [seg_tps] [line 93] [local] [def]
+!356 = metadata !{i32 786465, i64 0, i64 8}       ; [ DW_TAG_subrange_type ] [0, 7]
+!357 = metadata !{i32 786484, i32 0, null, metadata !"seg_tps", metadata !"seg_tps", metadata !"", metadata !5, i32 93, metadata !354, i32 1, i32 1, [8 x %struct.block*]* @seg_tps, null} ; [ DW_TAG_variable ] [seg_tps] [line 93] [local] [def]
 !358 = metadata !{i32 786484, i32 0, metadata !5, metadata !"alloc_mask", metadata !"alloc_mask", metadata !"alloc_mask", metadata !5, i32 65, metadata !351, i32 1, i32 1, i64 1, null} ; [ DW_TAG_variable ] [alloc_mask] [line 65] [local] [def]
 !359 = metadata !{i32 786484, i32 0, metadata !5, metadata !"size_mask", metadata !"size_mask", metadata !"size_mask", metadata !5, i32 68, metadata !351, i32 1, i32 1, i64 -16, null} ; [ DW_TAG_variable ] [size_mask] [line 68] [local] [def]
-!360 = metadata !{i32 786484, i32 0, null, metadata !"seg_size", metadata !"seg_size", metadata !"", metadata !5, i32 94, metadata !361, i32 1, i32 1, [4 x i64]* @seg_size, null} ; [ DW_TAG_variable ] [seg_size] [line 94] [local] [def]
-!361 = metadata !{i32 786433, null, null, metadata !"", i32 0, i64 256, i64 64, i32 0, i32 0, metadata !19, metadata !362, i32 0, null, null, null} ; [ DW_TAG_array_type ] [line 0, size 256, align 64, offset 0] [from size_t]
+!360 = metadata !{i32 786484, i32 0, null, metadata !"seg_size", metadata !"seg_size", metadata !"", metadata !5, i32 94, metadata !361, i32 1, i32 1, [7 x i64]* @seg_size, null} ; [ DW_TAG_variable ] [seg_size] [line 94] [local] [def]
+!361 = metadata !{i32 786433, null, null, metadata !"", i32 0, i64 448, i64 64, i32 0, i32 0, metadata !19, metadata !362, i32 0, null, null, null} ; [ DW_TAG_array_type ] [line 0, size 448, align 64, offset 0] [from size_t]
 !362 = metadata !{metadata !363}
-!363 = metadata !{i32 786465, i64 0, i64 4}       ; [ DW_TAG_subrange_type ] [0, 3]
+!363 = metadata !{i32 786465, i64 0, i64 7}       ; [ DW_TAG_subrange_type ] [0, 6]
 !364 = metadata !{i32 786484, i32 0, null, metadata !"heap_tp", metadata !"heap_tp", metadata !"", metadata !5, i32 91, metadata !25, i32 1, i32 1, %struct.block** @heap_tp, null} ; [ DW_TAG_variable ] [heap_tp] [line 91] [local] [def]
 !365 = metadata !{i32 786484, i32 0, null, metadata !"heap_hp", metadata !"heap_hp", metadata !"", metadata !5, i32 90, metadata !25, i32 1, i32 1, %struct.block** @heap_hp, null} ; [ DW_TAG_variable ] [heap_hp] [line 90] [local] [def]
 !366 = metadata !{i32 2, metadata !"Dwarf Version", i32 4}

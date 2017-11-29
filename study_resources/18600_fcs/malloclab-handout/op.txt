@@ -1,0 +1,15 @@
+Found benchmark throughput 13056 for cpu type Intel(R)Xeon(R)CPUE5520@2.27GHz, benchmark regular
+
+Throughput targets: min=6528, max=11750, benchmark=13056
+
+Testing mm malloc
+Reading tracefile: ./traces/bdd-aa4.rep
+Checking mm_malloc for correctness, efficiency, .and performance.
+
+Results for mm malloc:
+  valid    util     ops   msecs    Kops  trace
+ * yes    75.4%    5748     0.390  14753 ././traces/bdd-aa4.rep
+ 1  1     75.4%    5748     0.390  14753
+
+Average utilization = 75.4%. Average throughput = 14753 Kops/sec
+Perf index = 60.0 (util) + 40.0 (thru) = 100.0/100
