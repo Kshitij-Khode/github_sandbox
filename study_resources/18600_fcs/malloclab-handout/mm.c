@@ -57,13 +57,14 @@
 
 /* Basic constants */
 typedef uint64_t word_t;
-static const size_t wsize = sizeof(word_t);       // word and header size (bytes)
-static const size_t dsize = 2*wsize;              // double word size (bytes)
-static const size_t min_block_size = 2*dsize;     // Minimum block size
-static const size_t chunksize = (1 << 12); // requires (chunksize % 16 == 0)
+static const size_t wsize = sizeof(word_t); // word and header size (bytes)
+static const size_t dsize = 2*wsize;        // double word size (bytes)
+static const size_t mbs = dsize;            // Minimum block size
+static const size_t chunksize = (1 << 12);  // requires (chunksize % 16 == 0)
 
 static const word_t alloc_mask  = 0x1;
 static const word_t palloc_mask = 0x2;
+static const word_t pminb_mask  = 0x4;
 static const word_t size_mask   = ~(word_t)0xF;
 
 typedef struct block
@@ -90,7 +91,7 @@ static block_t* heap_hp = NULL;
 static block_t* heap_tp = NULL;
 static block_t* seg_hps[SEG_BINS];
 static block_t* seg_tps[SEG_BINS];
-static size_t seg_size[] = {32, 48, 64, 80};
+static size_t seg_size[] = {16, 32, 48, 64};
 
 /* Function prototypes for internal helper routines */
 static block_t *extend_heap(size_t size);
@@ -114,7 +115,7 @@ static void write_footer(block_t *block, size_t size, bool alloc);
 
 static block_t *find_next(block_t *block);
 static word_t *find_prev_footer(block_t *block);
-static block_t *find_prev(block_t *block);
+static block_t *find_prev(block_t *block, bool pminb);
 
 static block_t *payload_to_header(void *bp);
 static void *header_to_payload(block_t *block);
@@ -128,18 +129,20 @@ block_t** get_nextp(block_t* block);
 word_t* get_footer(block_t *block);
 void set_palloc(block_t* block, bool palloc);
 bool get_palloc(block_t* block);
+bool get_pminb(block_t* block);
+void set_pminb(block_t* block, bool pminb);
 
-void pop_from_freel(block_t* block);
-void push_to_freel(block_t* block);
+void pop_nsegl(block_t* block);
+void push_nsegl(block_t* block);
 
 void print_heap();
-void print_freelist();
+void print_nsegl();
 bool mm_checkheap(int lineno);
 bool mm_checkblock(block_t* block);
 
 bool mm_init(void) {
 
-    dbg_printf("mm_init::entry\n");
+    dbg_printf("\n ----- mm_init::entry -----\n");
 
     heap_hp = NULL;
     heap_tp = NULL;
@@ -169,7 +172,7 @@ bool mm_init(void) {
 
 void *malloc (size_t size) {
 
-    dbg_printf("malloc:entry(%lu)\n", size);
+    dbg_printf("\n----- malloc:entry(%lu) -----\n", size);
 
     dbg_requires(mm_checkheap);
 
@@ -190,7 +193,7 @@ void *malloc (size_t size) {
     }
 
     // Adjust block size to include overhead and to meet alignment requirements
-    asize = max(round_up(size+wsize, dsize), min_block_size);
+    asize = max(round_up(size+wsize, dsize), mbs);
 
     // Search the free list for a fit
     block = find_fit(asize);
@@ -217,7 +220,7 @@ void *malloc (size_t size) {
 
 void free (void *ptr) {
 
-    dbg_printf("free::entry(%p)\n", ptr);
+    dbg_printf("\n------ free::entry(%p) -----\n", ptr);
 
     if (ptr == NULL) {
         return;
@@ -227,21 +230,14 @@ void free (void *ptr) {
     size_t size = get_size(block);
 
     write_header(block, size, false);
-    write_footer(block, size, false);
-
-    dbg_printheap();
+    if (size > mbs) write_footer(block, size, false);
 
     block_t* nb = find_next(block);
     if (get_size(nb) > 0) {
         set_palloc(nb, false);
     }
 
-    dbg_printheap();
-
-    push_to_freel(block);
-
-    dbg_printheap();
-
+    push_nsegl(block);
     coalesce(block);
 }
 
@@ -333,13 +329,16 @@ static block_t *extend_heap(size_t size) {
     write_footer(block, size, false);
     if (heap_tp == NULL) set_palloc(block, true);
     else                 set_palloc(block, get_alloc(heap_tp));
+    if (heap_tp != NULL && get_size(heap_tp) == mbs) set_pminb(block, true);
 
     heap_tp = block;
-    push_to_freel(block);
+    push_nsegl(block);
 
     // Create new epilogue header
     block_t* block_next = find_next(block);
     write_header(block_next, 0, true);
+    set_palloc(block_next, false);
+    set_pminb(block_next, false);
 
     // Coalesce in case the previous block was free
     return coalesce(block);
@@ -356,67 +355,89 @@ static block_t *coalesce(block_t * block) {
 
     bool prev_alloc = get_palloc(block);
     bool next_alloc = get_alloc(block_next);
+    bool pminb      = get_pminb(block);
 
     if (!prev_alloc) {
-        block_prev = find_prev(block);
+        dbg_printf("coalesce::pal:pminb:%d\n", pminb);
+        block_prev = find_prev(block, pminb);
+        dbg_printf("coalesce::pal:bprev:%p\n", block_prev);
     }
 
     size_t size = get_size(block);
-
     if (prev_alloc && next_alloc) {
         return block;
     }
     else if (prev_alloc && !next_alloc) {
-        pop_from_freel(block);
-        pop_from_freel(block_next);
-        block_t** block_next_pp = get_prevp(block_next);
+        dbg_printf("coalesce::1st\n");
+
+        pop_nsegl(block);
+        pop_nsegl(block_next);
+        size_t bn_size = get_size(block_next);
+        if (bn_size > mbs) {
+            block_t** block_next_pp = get_prevp(block_next);
+            *block_next_pp = NULL;
+            write_footer(block_next, 0, false);
+        }
         block_t** block_next_np = get_nextp(block_next);
-        *block_next_pp = NULL;
         *block_next_np = NULL;
-        write_footer(block, 0, false);
-        write_footer(block_next, 0, false);
-        size += get_size(block_next);
+        size += bn_size;
         write_header(block, size, false);
         write_footer(block, size, false);
+        block_t* bnn = find_next(block_next);
+        if (get_size(bnn) > 0) set_pminb(bnn, false);
         if (heap_tp == block_next) heap_tp = block;
-        push_to_freel(block);
+        push_nsegl(block);
     }
     else if (!prev_alloc && next_alloc) {
-        pop_from_freel(block);
-        pop_from_freel(block_prev);
-        block_t** block_pp = get_prevp(block);
+        dbg_printf("coalesce::2nd\n");
+
+        pop_nsegl(block);
+        pop_nsegl(block_prev);
+        size_t bp_size = get_size(block_prev);
+        if (size > mbs) {
+            block_t** block_pp = get_prevp(block);
+            *block_pp = NULL;
+            write_footer(block, 0, false);
+        }
         block_t** block_np = get_nextp(block);
-        *block_pp = NULL;
         *block_np = NULL;
-        write_footer(block, 0, false);
-        write_footer(block_prev, 0, false);
-        size += get_size(block_prev);
+        size += bp_size;
         write_header(block_prev, size, false);
         write_footer(block_prev, size, false);
+        set_pminb(block_next, false);
         if (heap_tp == block) heap_tp = block_prev;
-        push_to_freel(block_prev);
+        push_nsegl(block_prev);
         block = block_prev;
     }
     else {
-        pop_from_freel(block);
-        pop_from_freel(block_prev);
-        pop_from_freel(block_next);
-        block_t** block_pp = get_prevp(block);
+        dbg_printf("coalesce::3rd\n");
+
+        pop_nsegl(block);
+        pop_nsegl(block_prev);
+        pop_nsegl(block_next);
+        size_t bn_size = get_size(block_next);
+        size_t bp_size = get_size(block_prev);
+        if (size > mbs) {
+            block_t** block_pp = get_prevp(block);
+            *block_pp = NULL;
+            write_footer(block, 0, false);
+        }
         block_t** block_np = get_nextp(block);
-        *block_pp = NULL;
         *block_np = NULL;
-        block_t** block_next_pp = get_prevp(block_next);
+        if (bn_size > mbs) {
+            block_t** block_next_pp = get_prevp(block_next);
+            *block_next_pp = NULL;
+            write_footer(block_next, 0, false);
+        }
         block_t** block_next_np = get_nextp(block_next);
-        *block_next_pp = NULL;
         *block_next_np = NULL;
-        write_footer(block, 0, false);
-        write_footer(block_prev, 0, false);
-        write_footer(block_next, 0, false);
-        size += get_size(block_next) + get_size(block_prev);
+        size += bn_size + bp_size;
         write_header(block_prev, size, false);
         write_footer(block_prev, size, false);
+        block_t* bnn = find_next(block_next);
+        if (get_size(bnn) > 0) set_pminb(bnn, false);
         if (heap_tp == block_next) heap_tp = block_prev;
-        push_to_freel(block_prev);
+        push_nsegl(block_prev);
         block = block_prev;
     }
 
@@ -436,25 +457,29 @@ static void place(block_t *block, size_t asize) {
 
     dbg_printf("place::entry:asize:%lu\n", asize);
 
-    pop_from_freel(block);
-    write_footer(block, 0, false);
-
+    pop_nsegl(block);
     size_t csize = get_size(block);
-    if ((csize - asize) >= min_block_size) {
+    if (csize > mbs) write_footer(block, 0, false);
+
+    if ((csize - asize) >= mbs) {
         write_header(block, asize, true);
         block_t* block_next = find_next(block);
         write_header(block_next, csize-asize, false);
-        write_footer(block_next, csize-asize, false);
         set_palloc(block_next, true);
+        if (asize == mbs) set_pminb(block_next, true);
+        else              set_pminb(block_next, false);
+        if (csize-asize > mbs) write_footer(block_next, csize-asize, false);
+        else {
+            block_t* bnn = find_next(block_next);
+            if (get_size(bnn) > 0) set_pminb(bnn, true);
+        }
         if (block == heap_tp) heap_tp = block_next;
-        push_to_freel(block_next);
+        push_nsegl(block_next);
     }
     else {
         write_header(block, csize, true);
         block_t* block_next = find_next(block);
-        if (get_size(block_next) > 0) {
-            set_palloc(block_next, true);
-        }
+        if (get_size(block_next) > 0) set_palloc(block_next, true);
     }
     dbg_printheap();
 }
@@ -471,7 +496,7 @@ static block_t *find_fit(size_t asize) {
     for (sb = 0; sb < SEG_BINS; sb++) {
         if (asize <= seg_size[sb] || sb == SEG_BINS-1) {
             block_t *block;
-            for (block = seg_hps[sb]; block != NULL; block = *get_nextp(block)) {
+            for (block=seg_hps[sb]; block != NULL; block=*get_nextp(block)) {
                 if (asize <= get_size(block)) {
                     return block;
                 }
@@ -559,7 +584,9 @@ static bool get_alloc(block_t *block)
  */
 static void write_header(block_t *block, size_t size, bool alloc)
 {
-    block->header = (pack(size, alloc) | (block->header & palloc_mask));
+    block->header = (pack(size, alloc) |
+                    (block->header & palloc_mask) |
+                    (block->header & pminb_mask));
 }
 
 /*
@@ -601,11 +628,13 @@ static word_t *find_prev_footer(block_t *block)
  *            block's footer and calculating the start of the previous block
  *            based on its size.
  */
-static block_t *find_prev(block_t *block)
-{
-    word_t *footerp = find_prev_footer(block);
-    size_t size = extract_size(*footerp);
-    return (block_t *)((char *)block - size);
+static block_t *find_prev(block_t *block, bool pminb) {
+    if (pminb) return (block_t*)((char*)block - mbs);
+    else {
+        word_t *footerp = find_prev_footer(block);
+        size_t size = extract_size(*footerp);
+        return (block_t*)((char*)block - size);
+    }
 }
 
 /*
@@ -649,11 +678,11 @@ static size_t align(size_t x) {
 }
 
 block_t** get_prevp(block_t* block) {
-    return (block_t**)(block->payload);
+    return (block_t**)(((char*)block->payload) + wsize);
 }
 
 block_t** get_nextp(block_t* block) {
-    return (block_t**)(((char*)block->payload) + wsize);
+    return (block_t**)(block->payload);
 }
 
 word_t* get_footer(block_t *block) {
@@ -669,57 +698,103 @@ bool get_palloc(block_t* block) {
     return (bool)(block->header & palloc_mask);
 }
 
-void push_to_freel(block_t* block) {
+bool extract_palloc(word_t word) {
+    return (bool)(word & palloc_mask);
+}
 
-    dbg_printf("push_to_freel::entry(%p)\n", block);
+void set_pminb(block_t* block, bool pminb) {
+    if (pminb) block->header |= pminb_mask;
+    else       block->header &= ~pminb_mask;
+}
+
+bool get_pminb(block_t* block) {
+    return (bool)(block->header & pminb_mask);
+}
+
+bool extract_pminb(word_t word) {
+    return (bool)(word & pminb_mask);
+}
+
+void push_nsegl(block_t* block) {
+
+    dbg_printf("push_nsegl::entry(%p)\n", block);
 
     size_t bsize = get_size(block);
+
+    dbg_printf("push_nsegl::bsize:(%lu)\n", bsize);
+
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
         if (bsize <= seg_size[sb] || sb == SEG_BINS-1) {
-            block_t** block_pp = get_prevp(block);
             block_t** block_np = get_nextp(block);
-            *block_pp = seg_tps[sb];
             *block_np = NULL;
+            if (sb != 0) {
+                block_t** block_pp = get_prevp(block);
+                *block_pp = seg_tps[sb];
+            }
             if (seg_tps[sb] != NULL) {
                 block_t** seg_tp_np = get_nextp(seg_tps[sb]);
                 *seg_tp_np = block;
             }
             seg_tps[sb] = block;
             if (seg_hps[sb] == NULL) seg_hps[sb] = block;
-            break;
+            return;
         }
     }
 }
 
-void pop_from_freel(block_t* block) {
+void pop_nsegl(block_t* block) {
 
-    dbg_printf("pop_from_freel::entry(%p)\n", block);
-
-    block_t** block_np = get_nextp(block);
-    block_t** block_pp = get_prevp(block);
-    if (*block_np != NULL) {
-        block_t** block_np_pp = get_prevp(*block_np);
-        *block_np_pp = *block_pp;
-    }
-    if (*block_pp != NULL) {
-        block_t** block_pp_np = get_nextp(*block_pp);
-        *block_pp_np = *block_np;
-    }
+    dbg_printf("pop_nsegl::entry(%p)\n", block);
 
     size_t bsize = get_size(block);
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
         if (bsize <= seg_size[sb] || sb == SEG_BINS-1) {
-            if (block == seg_hps[sb]) {
-                seg_hps[sb] = *block_np;
+            if (sb == 0) {
+                if (block == seg_hps[sb]) {
+                    block_t** block_np = get_nextp(block);
+                    seg_hps[sb] = *block_np;
+                    if (block == seg_tps[sb]) seg_tps[sb] = NULL;
+                    *block_np = NULL;
+                    return;
+                }
+                else {
+                    block_t* pb;
+                    block_t* cb;
+                    for (cb = seg_hps[sb];
+                         cb != NULL;
+                         cb = *get_nextp(cb))
+                    {
+                        if (cb == block) {
+                            block_t** pb_np = get_nextp(pb);
+                            block_t** cb_np = get_nextp(cb);
+                            *pb_np = *cb_np;
+                            if (cb == seg_tps[sb]) seg_tps[sb] = pb;
+                            *cb_np = NULL;
+                            return;
+                        }
+                        pb = cb;
+                    }
+                }
             }
-            if (block == seg_tps[sb]) {
-                seg_tps[sb] = *block_pp;
+            else {
+                block_t** block_np = get_nextp(block);
+                block_t** block_pp = get_prevp(block);
+                if (*block_np != NULL) {
+                    block_t** block_np_pp = get_prevp(*block_np);
+                    *block_np_pp = *block_pp;
+                }
+                if (*block_pp != NULL) {
+                    block_t** block_pp_np = get_nextp(*block_pp);
+                    *block_pp_np = *block_np;
+                }
+                if (block == seg_hps[sb]) seg_hps[sb] = *block_np;
+                if (block == seg_tps[sb]) seg_tps[sb] = *block_pp;
+                *block_np = NULL;
+                *block_pp = NULL;
             }
-            *block_np = NULL;
-            *block_pp = NULL;
-            break;
+            return;
         }
     }
 }
@@ -741,12 +816,19 @@ void print_heap() {
                 dbg_printf("  @(seg_hps[%d]:%09lx)\n", sb, (word_t)block);
             }
         }
-        dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->prev(%09lu):"
-            "@(%09lx)->next(%09lx):@(%09lx)->footer(%09lu)\n",
-            (word_t)block, (word_t)block->header,
-            (word_t)get_prevp(block), (word_t)*get_prevp(block),
-            (word_t)get_nextp(block), (word_t)*get_nextp(block),
-            (word_t)get_footer(block), (word_t)*get_footer(block));
+        if (get_size(block) > mbs) {
+            dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->next(%09lx):"
+                "@(%09lx)->prev(%09lu):@(%09lx)->footer(%09lu)\n",
+                (word_t)block, (word_t)block->header,
+                (word_t)get_nextp(block), (word_t)*get_nextp(block),
+                (word_t)get_prevp(block), (word_t)*get_prevp(block),
+                (word_t)get_footer(block), (word_t)*get_footer(block));
+        }
+        else {
+            dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->next(%09lx)\n",
+                (word_t)block, (word_t)block->header,
+                (word_t)get_nextp(block), (word_t)*get_nextp(block));
+        }
         for (sb = 0; sb < SEG_BINS; sb++) {
             if (block == seg_tps[sb]) {
                 dbg_printf("  @(seg_tps[%d]:%09lx)\n", sb, (word_t)block);
@@ -762,8 +844,8 @@ void print_heap() {
     dbg_printf("\n  print_heap::exit\n");
 }
 
-void print_freelist() {
-    dbg_printf("\n  print_freelist::entry\n\n");
+void print_nsegl() {
+    dbg_printf("\n  print_nsegl::entry\n\n");
 
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
@@ -772,24 +854,29 @@ void print_freelist() {
             if (block == seg_hps[sb]) {
                 dbg_printf("  @(seg_hps[%d]:%09lx)\n", sb, (word_t)block);
             }
-            dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->prev(%09lx):"
-                "@(%09lx)->next(%09lx):@(%09lx)->footer(%09lu)\n",
-                (word_t)block, (word_t)block->header,
-                (word_t)get_prevp(block), (word_t)*get_prevp(block),
-                (word_t)get_nextp(block), (word_t)*get_nextp(block),
-                (word_t)get_footer(block), (word_t)*get_footer(block));
+            if (get_size(block) > mbs) {
+                dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->next(%09lx):"
+                    "@(%09lx)->prev(%09lx):@(%09lx)->footer(%09lu)\n",
+                    (word_t)block, (word_t)block->header,
+                    (word_t)get_nextp(block), (word_t)*get_nextp(block),
+                    (word_t)get_prevp(block), (word_t)*get_prevp(block),
+                    (word_t)get_footer(block), (word_t)*get_footer(block));
+            }
+            else {
+                dbg_printf("  @(%09lx)->head(%09lu):@(%09lx)->next(%09lx)\n",
+                    (word_t)block, (word_t)block->header,
+                    (word_t)get_nextp(block), (word_t)*get_nextp(block));
+            }
             if (block == seg_tps[sb]) {
                 dbg_printf("  @(seg_tps[%d]:%09lx)\n", sb, (word_t)block);
             }
         }
     }
 
-    dbg_printf("\n  print_freelist::exit\n");
+    dbg_printf("\n  print_nsegl::exit\n");
 }
 
 bool mm_checkblock(block_t* block) {
-
-    dbg_printf("  mm_checkblock::entry\n");
 
     word_t* fp = get_footer(block);
 
@@ -802,17 +889,26 @@ bool mm_checkblock(block_t* block) {
         dbg_printf("  mm_cb::block(@%p) not in heap\n", block);
         return false;
     }
-    if (!get_alloc(block) && (get_size(block) != extract_size(*fp))) {
-        dbg_printf("  mm_cb::block(@%p) header footer size don't match\n", block);
+    if (!get_alloc(block) &&
+        (get_size(block) > mbs) &&
+        (get_size(block) != extract_size(*fp)))
+    {
+        dbg_printf(
+            "  mm_cb::block(@%p) header footer size don't match\n", block);
         return false;
     }
-    if (!get_alloc(block) && (get_alloc(block) != extract_alloc(*fp))) {
-        dbg_printf("  mm_cb::block(@%p) header footer alloc don't match\n", block);
+    if (!get_alloc(block) &&
+        (get_size(block) > mbs) &&
+        (get_alloc(block) != extract_alloc(*fp)))
+    {
+        dbg_printf(
+            "  mm_cb::block(@%p) header footer alloc don't match\n", block);
         return false;
     }
     block_t* nb = find_next(block);
     if (get_size(nb) > 0 && get_alloc(block) == 0 && get_alloc(nb) == 0) {
-        dbg_printf("  mm_cb::free blocks(@%p & @%p) aren't coalesced\n", block, nb);
+        dbg_printf(
+            "  mm_cb::free blocks(@%p & @%p) aren't coalesced\n", block, nb);
         return false;
     }
     return true;
@@ -822,7 +918,7 @@ bool mm_checkheap(int lineno) {
     dbg_printf("\n  mm_checkheap::line(%d)\n", lineno);
 
     dbg_printheap();
-    print_freelist();
+    print_nsegl();
 
     word_t* pf = find_prev_footer(heap_hp);
 
@@ -832,6 +928,14 @@ bool mm_checkheap(int lineno) {
     }
     if (!extract_alloc(*pf)) {
         dbg_printf("  mm_ch::prologue footer(@%p) alloc unset\n", &pf);
+        return false;
+    }
+    if (extract_palloc(*pf)) {
+        dbg_printf("  mm_ch::prologue footer(@%p) palloc set\n", &pf);
+        return false;
+    }
+    if (extract_pminb(*pf)) {
+        dbg_printf("  mm_ch::prologue footer(@%p) pminb set\n", &pf);
         return false;
     }
 
@@ -847,6 +951,14 @@ bool mm_checkheap(int lineno) {
         dbg_printf("  mm_ch::epilogue header(@%p) alloc unset\n", block);
         return false;
     }
+    if (get_palloc(block)) {
+        dbg_printf("  mm_ch::epilogue header(@%p) palloc set\n", block);
+        return false;
+    }
+    if (get_pminb(block)) {
+        dbg_printf("  mm_ch::epilogue header(@%p) pminb set\n", block);
+        return false;
+    }
 
     int freel_size = 0;
     int freeh_size = 0;
@@ -855,15 +967,24 @@ bool mm_checkheap(int lineno) {
         for (block = seg_hps[sb]; block != NULL; block = *get_nextp(block)) {
             freel_size++;
             if (*get_nextp(block) != NULL && !in_heap(*get_nextp(block))) {
-                dbg_printf("  mm_cfl::(%p)->next not in heap\n", *get_nextp(block));
+                dbg_printf(
+                    "  mm_cfl::(%p)->next not in heap\n", *get_nextp(block));
                 return false;
             }
-            if (*get_prevp(block) != NULL && !in_heap(*get_prevp(block))) {
-                dbg_printf("  mm_cfl::(%p)->prev not in heap\n", *get_prevp(block));
+            if ((get_size(block) > mbs) &&
+                *get_prevp(block) != NULL &&
+                !in_heap(*get_prevp(block)))
+            {
+                dbg_printf(
+                    "  mm_cfl::(%p)->prev not in heap\n", *get_prevp(block));
                 return false;
             }
-            if (*get_nextp(block) != NULL && block != *get_prevp(*get_nextp(block))) {
-                dbg_printf("  mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\n",
+            if ((get_size(block) > mbs) &&
+                *get_nextp(block) != NULL &&
+                block != *get_prevp(*get_nextp(block)))
+            {
+                dbg_printf(
+                    "  mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\n",
                     block, *get_nextp(block),
                     *get_nextp(block), *get_prevp(*get_nextp(block)));
                 return false;
@@ -878,7 +999,8 @@ bool mm_checkheap(int lineno) {
     }
 
     if (freel_size != freeh_size) {
-        dbg_printf("  mm_cfl::freelist(%d) != freeheap(%d)\n", freel_size, freeh_size);
+        dbg_printf(
+            "  mm_cfl::freelist(%d) != freeheap(%d)\n", freel_size, freeh_size);
         return false;
     }
     dbg_printf(" mm_checkheap::exit\n");
