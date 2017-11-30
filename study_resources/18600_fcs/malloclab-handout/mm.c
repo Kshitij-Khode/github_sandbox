@@ -4,6 +4,35 @@
  * Name: Kshitij Khode
  * Andrew ID: kkhode
  *
+ * Implementation of a basic dynamic memory allocation library. Support the
+ * the following functions:
+ * 1. Initiatialization of dynamic memory heap (mm_init)
+ * 2. Allocation of dynamic memory block (malloc)
+ * 3. Freeing of dynamic memory block (free)
+ * 4. Reallocation of dynamic memory block (realloc)
+ * 5. Allocation of dynamic memory block with byte set to a value (calloc)
+ *
+ * MinimumBlockSize: 16
+ * Free Block Structure:
+ * 1. If free block size == MinimumBlockSize
+ *    - Header(sizeBits|extraBit|previousMinBlockBit|previousAllocBit|AllocBit)
+ *    - Next to next block in free segregated list
+ * 2. If free block size != MinimumBlockSize
+ *    - Header(size|extraBit|previousMinBlockBit|previousAllocBit|allocBit)
+ *    - Next Pointer in free segregated list
+ *    - Previous pointer in free segregated list
+ *    - Footer(size|3extraBits|allocBit)
+ *
+ * Allocated Block Structure:
+ * - Header(sizeBits|extraBit|previousMinBlockBit|previousAllocBit|AllocBit)
+ * - Payload
+ *
+ * Segregrated Free List:
+ * - Blocks are added to the end of list
+ * - Search for free block starts from the beginning of the list (First fit)
+ * - Segregated free list has 8 bins, of max sizes 16, 32, 48, 64, 128, 256,
+ *   512 & max heap size bytes.
+ *
  */
 #include <assert.h>
 #include <stdio.h>
@@ -140,6 +169,8 @@ void print_nsegl();
 bool mm_checkheap(int lineno);
 bool mm_checkblock(block_t* block);
 
+/* Initializes dynamic memory heap by allocating 4096 bytes. Returns true if
+successfull. */
 bool mm_init(void) {
 
     dbg_printf("\n ----- mm_init::entry -----\n");
@@ -170,6 +201,8 @@ bool mm_init(void) {
     return true;
 }
 
+/* Allocates a block in the heap matching alignment requirements with atleast
+the size requested by the user. Returns the pointer to the payload. */
 void *malloc (size_t size) {
 
     dbg_printf("\n----- malloc:entry(%lu) -----\n", size);
@@ -218,6 +251,8 @@ void *malloc (size_t size) {
     return bp;
 }
 
+/* Frees a block previously allocated by malloc and adds it a segregated free
+list. Joins any contigous free blocks. */
 void free (void *ptr) {
 
     dbg_printf("\n------ free::entry(%p) -----\n", ptr);
@@ -344,7 +379,6 @@ static block_t *extend_heap(size_t size) {
     return coalesce(block);
 }
 
-// [KBK:KBK:?] Remove unncess NULL'ing, removal of footers and unsetting pallocs
 static block_t *coalesce(block_t * block) {
 
     dbg_printf("coalesce::entry(%p)\n", block);
@@ -358,9 +392,7 @@ static block_t *coalesce(block_t * block) {
     bool pminb      = get_pminb(block);
 
     if (!prev_alloc) {
-        dbg_printf("coalesce::pal:pminb:%d\n", pminb);
         block_prev = find_prev(block, pminb);
-        dbg_printf("coalesce::pal:bprev:%p\n", block_prev);
     }
 
     size_t size = get_size(block);
@@ -368,18 +400,14 @@ static block_t *coalesce(block_t * block) {
         return block;
     }
     else if (prev_alloc && !next_alloc) {
-        dbg_printf("coalesce::1st\n");
-
         pop_nsegl(block);
         pop_nsegl(block_next);
         size_t bn_size = get_size(block_next);
         if (bn_size > mbs) {
-            block_t** block_next_pp = get_prevp(block_next);
-            *block_next_pp = NULL;
+            *get_prevp(block_next) = NULL;
             write_footer(block_next, 0, false);
         }
-        block_t** block_next_np = get_nextp(block_next);
-        *block_next_np = NULL;
+        *get_nextp(block_next) = NULL;
         size += bn_size;
         write_header(block, size, false);
         write_footer(block, size, false);
@@ -389,18 +417,14 @@ static block_t *coalesce(block_t * block) {
         push_nsegl(block);
     }
     else if (!prev_alloc && next_alloc) {
-        dbg_printf("coalesce::2nd\n");
-
         pop_nsegl(block);
         pop_nsegl(block_prev);
         size_t bp_size = get_size(block_prev);
         if (size > mbs) {
-            block_t** block_pp = get_prevp(block);
-            *block_pp = NULL;
+            *get_prevp(block) = NULL;
             write_footer(block, 0, false);
         }
-        block_t** block_np = get_nextp(block);
-        *block_np = NULL;
+        *get_nextp(block) = NULL;
         size += bp_size;
         write_header(block_prev, size, false);
         write_footer(block_prev, size, false);
@@ -410,27 +434,21 @@ static block_t *coalesce(block_t * block) {
         block = block_prev;
     }
     else {
-        dbg_printf("coalesce::3rd\n");
-
         pop_nsegl(block);
         pop_nsegl(block_prev);
         pop_nsegl(block_next);
         size_t bn_size = get_size(block_next);
         size_t bp_size = get_size(block_prev);
         if (size > mbs) {
-            block_t** block_pp = get_prevp(block);
-            *block_pp = NULL;
+            *get_prevp(block) = NULL;
             write_footer(block, 0, false);
         }
-        block_t** block_np = get_nextp(block);
-        *block_np = NULL;
+        *get_nextp(block) = NULL;
         if (bn_size > mbs) {
-            block_t** block_next_pp = get_prevp(block_next);
-            *block_next_pp = NULL;
+            *get_prevp(block_next) = NULL;
             write_footer(block_next, 0, false);
         }
-        block_t** block_next_np = get_nextp(block_next);
-        *block_next_np = NULL;
+        *get_nextp(block_next) = NULL;
         size += bn_size + bp_size;
         write_header(block_prev, size, false);
         write_footer(block_prev, size, false);
@@ -525,7 +543,7 @@ static size_t round_up(size_t size, size_t n)
 
 /*
  * pack: returns a header reflecting a specified size and its alloc status.
- *       If the block is allocated, the lowest bit is set to 1, and 0 otherwise.
+ *      If the block is allocated, the lowest bit is set to 1, and 0 otherwise.
  */
 static word_t pack(size_t size, bool alloc)
 {
@@ -677,64 +695,74 @@ static size_t align(size_t x) {
     return ALIGNMENT * ((x+ALIGNMENT-1)/ALIGNMENT);
 }
 
+/* get pointer to the previous element in the segregated free list */
 block_t** get_prevp(block_t* block) {
     return (block_t**)(((char*)block->payload) + wsize);
 }
 
+/* get pointer to the next element in the segregated free list */
 block_t** get_nextp(block_t* block) {
     return (block_t**)(block->payload);
 }
 
+/* get the footer of the requested block */
 word_t* get_footer(block_t *block) {
     return (word_t *)((block->payload) + get_size(block) - dsize);
 }
 
+/* set bit that tells that the previous block in the heap is allocated */
 void set_palloc(block_t* block, bool palloc) {
     if (palloc) block->header |= palloc_mask;
     else        block->header &= ~palloc_mask;
 }
 
+/* get the value of the bit that tells that the previous block in the heap is
+allocated */
 bool get_palloc(block_t* block) {
     return (bool)(block->header & palloc_mask);
 }
 
+/* get the value of the bit that tells that the previous block in the heap is
+allocated */
 bool extract_palloc(word_t word) {
     return (bool)(word & palloc_mask);
 }
 
+/* set the value of the bit that tells that the previous block in the heap has
+the size equal to the minimum block size */
 void set_pminb(block_t* block, bool pminb) {
     if (pminb) block->header |= pminb_mask;
     else       block->header &= ~pminb_mask;
 }
 
+/* get the value of the bit that tells that the previous block in the heap has
+the size equal to the minimum block size */
 bool get_pminb(block_t* block) {
     return (bool)(block->header & pminb_mask);
 }
 
+/* get the value of the bit that tells that the previous block in the heap has
+the size equal to the minimum block size */
 bool extract_pminb(word_t word) {
     return (bool)(word & pminb_mask);
 }
 
+/* push the requested block into the bottom of the appropriate bin in a
+segregated free list */
 void push_nsegl(block_t* block) {
 
     dbg_printf("push_nsegl::entry(%p)\n", block);
 
     size_t bsize = get_size(block);
-
-    dbg_printf("push_nsegl::bsize:(%lu)\n", bsize);
-
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
         if (bsize <= seg_size[sb] || sb == SEG_BINS-1) {
-            block_t** block_np = get_nextp(block);
-            *block_np = NULL;
+            *get_nextp(block) = NULL;
             if (sb != 0) {
-                block_t** block_pp = get_prevp(block);
-                *block_pp = seg_tps[sb];
+                *get_prevp(block) = seg_tps[sb];
             }
             if (seg_tps[sb] != NULL) {
-                block_t** seg_tp_np = get_nextp(seg_tps[sb]);
-                *seg_tp_np = block;
+                *get_nextp(seg_tps[sb]) = block;
             }
             seg_tps[sb] = block;
             if (seg_hps[sb] == NULL) seg_hps[sb] = block;
@@ -743,6 +771,7 @@ void push_nsegl(block_t* block) {
     }
 }
 
+/* pops the requested block from the segregated free list */
 void pop_nsegl(block_t* block) {
 
     dbg_printf("pop_nsegl::entry(%p)\n", block);
@@ -751,14 +780,18 @@ void pop_nsegl(block_t* block) {
     int sb;
     for (sb = 0; sb < SEG_BINS; sb++) {
         if (bsize <= seg_size[sb] || sb == SEG_BINS-1) {
+            /* deal with special conditions of min size bin */
             if (sb == 0) {
+                /*deal with simple condition of adding to head of singly linked
+                list */
                 if (block == seg_hps[sb]) {
-                    block_t** block_np = get_nextp(block);
-                    seg_hps[sb] = *block_np;
+                    seg_hps[sb] = *get_nextp(block);
                     if (block == seg_tps[sb]) seg_tps[sb] = NULL;
-                    *block_np = NULL;
+                    *get_nextp(block) = NULL;
                     return;
                 }
+                /* else traverse the entire singly linked list and connect
+                appropriate elements */
                 else {
                     block_t* pb;
                     block_t* cb;
@@ -767,28 +800,21 @@ void pop_nsegl(block_t* block) {
                          cb = *get_nextp(cb))
                     {
                         if (cb == block) {
-                            block_t** pb_np = get_nextp(pb);
-                            block_t** cb_np = get_nextp(cb);
-                            *pb_np = *cb_np;
+                            *get_nextp(pb) = *get_nextp(cb);
                             if (cb == seg_tps[sb]) seg_tps[sb] = pb;
-                            *cb_np = NULL;
+                            *get_nextp(cb) = NULL;
                             return;
                         }
                         pb = cb;
                     }
                 }
             }
+            /* deal with all block sizes other than min block size */
             else {
                 block_t** block_np = get_nextp(block);
                 block_t** block_pp = get_prevp(block);
-                if (*block_np != NULL) {
-                    block_t** block_np_pp = get_prevp(*block_np);
-                    *block_np_pp = *block_pp;
-                }
-                if (*block_pp != NULL) {
-                    block_t** block_pp_np = get_nextp(*block_pp);
-                    *block_pp_np = *block_np;
-                }
+                if (*block_np != NULL)    *get_prevp(*block_np) = *block_pp;
+                if (*block_pp != NULL)    *get_nextp(*block_pp) = *block_np;
                 if (block == seg_hps[sb]) seg_hps[sb] = *block_np;
                 if (block == seg_tps[sb]) seg_tps[sb] = *block_pp;
                 *block_np = NULL;
@@ -799,6 +825,8 @@ void pop_nsegl(block_t* block) {
     }
 }
 
+/* prints the heap, inclding the heap head/tail pointers and segregated free
+list head/tail pointers */
 void print_heap() {
     dbg_printf("\n  print_heap::entry::heap_tp(%p)\n\n", heap_tp);
     dbg_printf("  @prol(%09lx)->footer(%09lx)\n",
@@ -844,6 +872,7 @@ void print_heap() {
     dbg_printf("\n  print_heap::exit\n");
 }
 
+/* prints the segregated free list including its head/tail pointers */
 void print_nsegl() {
     dbg_printf("\n  print_nsegl::entry\n\n");
 
@@ -876,6 +905,8 @@ void print_nsegl() {
     dbg_printf("\n  print_nsegl::exit\n");
 }
 
+/* checks a block for any anomoly in its structure. returns if any anomaly was
+found */
 bool mm_checkblock(block_t* block) {
 
     word_t* fp = get_footer(block);
@@ -887,6 +918,21 @@ bool mm_checkblock(block_t* block) {
     }
     if (!in_heap(block)) {
         dbg_printf("  mm_cb::block(@%p) not in heap\n", block);
+        return false;
+    }
+    if (get_size(block) < mbs) {
+        dbg_printf("  mm_cb::block(@%p) hsize < min block size\n", block);
+        return false;
+    }
+    if (!get_alloc(block) &&
+        (get_size(block) > mbs) &&
+        (extract_size(*fp) < mbs))
+    {
+        dbg_printf("  mm_cb::block(@%p) fsize < min block size\n", block);
+        return false;
+    }
+    if (align(get_size(block)) == get_size(block)) {
+        dbg_printf("  mm_cb::block(@%p) illegal block size\n", block);
         return false;
     }
     if (!get_alloc(block) &&
@@ -906,6 +952,14 @@ bool mm_checkblock(block_t* block) {
         return false;
     }
     block_t* nb = find_next(block);
+    if (get_palloc(nb) != get_alloc(block)) {
+        dbg_printf("  mm_cb::block(@%p) alloc palloc bit mismatch\n", block);
+        return false;
+    }
+    if (get_pminb(nb) ^ (get_size(block) == mbs)) {
+        dbg_printf("  mm_cb::block(@%p) pminb block size mismatch\n", block);
+        return false;
+    }
     if (get_size(nb) > 0 && get_alloc(block) == 0 && get_alloc(nb) == 0) {
         dbg_printf(
             "  mm_cb::free blocks(@%p & @%p) aren't coalesced\n", block, nb);
@@ -914,6 +968,8 @@ bool mm_checkblock(block_t* block) {
     return true;
 }
 
+/* checks a heap structure for any anomoly in its structure. returns if any
+anomaly was found */
 bool mm_checkheap(int lineno) {
     dbg_printf("\n  mm_checkheap::line(%d)\n", lineno);
 
@@ -987,6 +1043,12 @@ bool mm_checkheap(int lineno) {
                     "  mm_cfl::(%p)->next(%p) & (%p)->prev(%p) don't match\n",
                     block, *get_nextp(block),
                     *get_nextp(block), *get_prevp(*get_nextp(block)));
+                return false;
+            }
+            if (get_size(block) != seg_size[sb] && sb == SEG_BINS-1) {
+                dbg_printf(
+                    "  mm_cfl::(%p)->block size seg size mismatch\n",
+                    *get_prevp(block));
                 return false;
             }
         }

@@ -1,4 +1,10 @@
 
 [
-	{ "keys": ["ctrl+alt+enter"], "command": "goto_definition" }
+    { "keys": ["ctrl+alt+enter"], "command": "goto_definition" },
+    { "keys": ["ctrl+alt+b"],
+      "command": "exec",
+      "args": {
+        "hide_phantoms_only": true
+      }
+    }
 ]
