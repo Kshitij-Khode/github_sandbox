@@ -24,7 +24,7 @@ Eviction policy is LRU.
 #define MAX_OBJECT_SIZE 102400
 #define MAX_CACHE_LINES MAX_CACHE_SIZE/MAX_OBJECT_SIZE
 
-#define DEBUG
+// #define DEBUG
 #ifdef  DEBUG
 #define dprintf(...) printf(__VA_ARGS__)
 #else
