@@ -123,18 +123,26 @@ int do_proxy(int fd) {
     Rio_readinitb(&rior, fd);
     Rio_readlineb(&rior, bufr, MAXBUF);
 
-    dprintf("log>> request l1,\n%s", bufr);
+    if (strcmp(bufr, "") == 0) {
+        dprintf("log>> received null str as request\n");
+        return 0;
+    }
+    dprintf("log>> orig_request l1:%s", bufr);
 
     strcpy(buf0, bufr);
     strtok(buf0, "//");
-    dom_p  = strtok(NULL, "/");
-    path_p = strtok(NULL, " ");
+    dom_p  = strtok(NULL, " ");
+    dom_p  = strtok_r(dom_p, "/", &path_p);
 
     if (strstr(dom_p, ":")) dom_p  = strtok_r(dom_p, ":", &port_p);
     else                    port_p = "80";
 
+    dprintf("log>> dom_p:%s, port_p:%s, path_p:%s\n", dom_p, port_p, path_p);
+
     strcat(uri, dom_p);
+    strcat(uri, ":");
     strcat(uri, port_p);
+    strcat(uri, "/");
     strcat(uri, path_p);
     if (!load_cache(uri, bufo)) {
         dprintf("log>> %s not found in cache\n", uri);
@@ -161,21 +169,38 @@ int do_proxy(int fd) {
 
         dprintf("log>> proxy_request,\n%s", bufw);
 
-        servfd = Open_clientfd(dom_p, port_p);
-        Rio_writen(servfd, bufw, strlen(bufw));
+        if ((servfd = open_clientfd(dom_p, port_p)) < 0) {
+            dprintf("log>> (%s:%s) connection error\n", dom_p, port_p);
+            return 0;
+        }
 
+        if (rio_writen(servfd, bufw, strlen(bufw)) <= 0) {
+            dprintf("log>> error proxy_request write\n");
+            close(servfd);
+            return 0;
+        }
         Rio_readinitb(&riow, servfd);
+
+        dprintf("log>> proxy_response,\n");
+
         while ((br = Rio_readlineb(&riow, bufr, sizeof(bufr)))) {
             tr += br;
             if(tr <= sizeof(bufo)) strcat(bufo, bufr);
-            Rio_writen(fd, bufr, br);
-
-            dprintf("log>> proxy_response,\n%s", bufr);
+            if (rio_writen(fd, bufr, br) < 0) {
+                dprintf("log>> error proxy_response write\n");
+                close(servfd);
+                return 0;
+            }
         }
         close(servfd);
         if (tr <= MAX_OBJECT_SIZE) save_cache(uri, bufo);
+        return 1;
     }
-    else Rio_writen(fd, bufo, sizeof(bufo));
+    dprintf("log>> %s was found in cache\n", uri);
+    if (rio_writen(fd, bufo, sizeof(bufo)) < 0) {
+        dprintf("log>> error responding via cache\n");
+        return 0;
+    }
     return 1;
 }
 
@@ -191,8 +216,8 @@ vargp: pointer to array of arguments passed to the thread when pthread_create
        was called
 */
 void *thread(void *vargp) {
-    int connfd = *((int*)vargp);
     pthread_detach(pthread_self());
+    int connfd = *((int*)vargp);
     free(vargp);
     do_proxy(connfd);
     close(connfd);
