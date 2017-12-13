@@ -17,7 +17,7 @@ csapp.o: csapp.c csapp.h
 	$(CC) $(CFLAGS) $(DUVAR) -c csapp.c
 
 proxy.o: proxy.c csapp.h
-	$(CC) $(CFLAGS) $(DUVAR) -c proxy.c
+	$(CC) $(CFLAGS) $(DUVAR) $(LDFLAGS) -c proxy.c
 
 proxy: proxy.o csapp.o
 
