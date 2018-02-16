@@ -1,4 +1,5 @@
 # coding: utf-8
+
 from __future__ import division, absolute_import
 from __future__ import print_function, unicode_literals
 
@@ -41,13 +42,26 @@ def value_function_to_policy(env, gamma, value_function):
       An array of integers. Each integer is the optimal action to take
       in that state according to the environment dynamics and the
       given value function.
-    """    
-    return False, policy
+    """
+    policy = np.zeros(env.nS, dtype='int')
+
+    for sI in xrange(0, env.nS):
+        oV = -1
+        oA =  0
+        for aI in xrange(0, env.nA):
+            [(prob, sprime, rew, term)] = env.P[sI][aI]
+            nV = prob*(rew+(0 if term else gamma*value_function[sprime]))
+            if nV >= oV:
+                oV = nV
+                oA = aI
+        policy[sI] = oA
+
+    return policy
 
 
 def evaluate_policy_sync(env, gamma, policy, max_iterations=int(1e3), tol=1e-3):
     """Performs policy evaluation.
-    
+
     Evaluates the value of a given policy.
 
     Parameters
@@ -70,12 +84,24 @@ def evaluate_policy_sync(env, gamma, policy, max_iterations=int(1e3), tol=1e-3):
       The value for the given policy and the number of iterations till
       the value function converged.
     """
-    return np.zeros(env.nS), 0
+    value_func = np.zeros(env.nS)
+
+    for iter in xrange(0, max_iterations):
+        stop = True
+        for sI in xrange(0, env.nS):
+            [(prob, sprime, rew, term)] = env.P[sI][policy[sI]]
+            nV = prob*(rew+(0 if term else gamma*value_func[sprime]))
+            if abs(value_func[sI]-nV) > tol: stop = False
+            value_func[sI] = nV
+        if stop: return value_func, iter
+
+    print('[DEBUG] @evaluate_policy_sync: did not converge')
+    return value_func, max_iterations
 
 
 def evaluate_policy_async_ordered(env, gamma, policy, max_iterations=int(1e3), tol=1e-3):
     """Performs policy evaluation.
-    
+
     Evaluates the value of a given policy by asynchronous DP.  Updates states in
     their 1-N order.
 
@@ -104,7 +130,7 @@ def evaluate_policy_async_ordered(env, gamma, policy, max_iterations=int(1e3), t
 
 def evaluate_policy_async_randperm(env, gamma, policy, max_iterations=int(1e3), tol=1e-3):
     """Performs policy evaluation.
-    
+
     Evaluates the value of a policy.  Updates states by randomly sampling index
     order permutations.
 
@@ -133,9 +159,9 @@ def evaluate_policy_async_randperm(env, gamma, policy, max_iterations=int(1e3), 
 
 def evaluate_policy_async_custom(env, gamma, policy, max_iterations=int(1e3), tol=1e-3):
     """Performs policy evaluation.
-    
+
     Evaluate the value of a policy. Updates states by a student-defined
-    heuristic. 
+    heuristic.
 
     Parameters
     ----------
@@ -162,7 +188,7 @@ def evaluate_policy_async_custom(env, gamma, policy, max_iterations=int(1e3), to
 
 def improve_policy(env, gamma, value_func, policy):
     """Performs policy improvement.
-    
+
     Given a policy and value function, improves the policy.
 
     Parameters
@@ -182,7 +208,12 @@ def improve_policy(env, gamma, value_func, policy):
     bool, np.ndarray
       Returns true if policy changed. Also returns the new policy.
     """
-    return False, policy
+    npolicy = value_function_to_policy(env, gamma, value_func)
+
+    if np.array_equal(npolicy, policy):
+        return False, policy
+    else:
+        return True, npolicy
 
 
 def policy_iteration_sync(env, gamma, max_iterations=int(1e3), tol=1e-3):
@@ -192,7 +223,7 @@ def policy_iteration_sync(env, gamma, max_iterations=int(1e3), tol=1e-3):
 
     You should use the improve_policy() and evaluate_policy_sync() methods to
     implement this method.
-    
+
     Parameters
     ----------
     env: gym.core.Environment
@@ -211,9 +242,21 @@ def policy_iteration_sync(env, gamma, max_iterations=int(1e3), tol=1e-3):
        Returns optimal policy, value function, number of policy
        improvement iterations, and number of value iterations.
     """
-    policy = np.zeros(env.nS, dtype='int')
-    value_func = np.zeros(env.nS)
+    total_val_iter = 0
+    policy         = np.zeros(env.nS, dtype='int')
+
+    for iter in xrange(0,max_iterations):
+        value_func, val_iter = evaluate_policy_sync(env, gamma, policy, max_iterations, tol)
+        imp, opolicy         = improve_policy(env, gamma, value_func, policy)
+        total_val_iter      += val_iter
+        policy               = opolicy
+
+        if not imp: return opolicy, value_func, iter, total_val_iter
+
+    print('[DEBUG] @policy_iteration_sync: did not converge')
+    print('[DEBUG] @policy_iteration_sync: opolicy:\n%s' % opolicy)
     return policy, value_func, 0, 0
+
 
 
 def policy_iteration_async_ordered(env, gamma, max_iterations=int(1e3),
@@ -327,7 +370,21 @@ def value_iteration_sync(env, gamma, max_iterations=int(1e3), tol=1e-3):
     np.ndarray, iteration
       The value function and the number of iterations it took to converge.
     """
-    return np.zeros(env.nS), 0
+    value_func = np.zeros(env.nS)
+
+    for iter in xrange(0, max_iterations):
+        stop = True
+        for sI in xrange(0, env.nS):
+            oV = -1
+            for aI in xrange(0, env.nA):
+                [(prob, sprime, rew, term)] = env.P[sI][aI]
+                nV = prob*(rew+(0 if term else gamma*value_func[sprime]))
+                if nV > oV: oV = nV
+            if abs(value_func[sI] - oV) > tol: stop = False
+            value_func[sI] = oV
+        if stop: return value_func, iter
+
+    return value_func, max_iterations
 
 
 def value_iteration_async_ordered(env, gamma, max_iterations=int(1e3), tol=1e-3):
