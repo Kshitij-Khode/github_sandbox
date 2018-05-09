@@ -15,17 +15,13 @@ bash.edit.aliases() { "$1" ~/repos/github_sandbox/settings_files/.settings_bash_
 bash.cmd.show() { type "$1"; }
 scp.put() { scp -r "$2" "$1":"$3"; }
 scp.get() { scp -r "$1":"$2" "$3"; }
+lcd() { cd "$1"; ls; }
 
 # Aliases
 alias ldir='du -sh *'
 alias gdir='xdg-open . &> /dev/null &'
 alias bash.refresh='. ~/.bashrc'
-alias cd.compsys='cd ~/repos/github_sandbox/study_resources/18600_fcs'
 alias cd.githubsandbox.root='cd ~/repos/github_sandbox/'
-alias cd.cmubiometrics.root='cd ~/repos/cmubiometrics_sandbox/'
-alias cd.ammmlproject.root='cd ~/repos/CMU11777Project/'
-alias cd.deeprl.root='cd ~/repos/github_sandbox/study_resources/deep_rl/'
-alias cd.gdrive.deeprl.root="cd ~/google_drive/Study\ Resources/CMU/ECE/Spring\ \'18/10703\ -\ Deep\ RL\ and\ Control/"
 alias adb.refresh='adb kill-server;sudo adb start-server;'
 alias g.s='git status'
 alias g.a='git add --all'
@@ -57,7 +53,7 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\W\[\033[00m\]\$ '
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u\[\033[37m\]@\[\033[32m\]\W\[\033[00m\]\$ '
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\W\$'
 fi

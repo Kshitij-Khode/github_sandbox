@@ -1,7 +1,0 @@
-future
-gym==0.9.5
-numpy
-scipy
-matplotlib
-six
--e .
