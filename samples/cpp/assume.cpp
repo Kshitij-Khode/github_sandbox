@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 int getFirstElement(const std::vector<int>& v) {
     [[assume(!v.empty())]]; // Compiler can optimize away empty checks
@@ -15,8 +16,8 @@ void limiter(float* samples, size_t count) {
 }
 
 int main() {
-    std::vector<int> data = {42, 7, 13};
-    std::cout << "First element: " << getFirstElement(data) << std::endl;
+    std::vector<int> vec = {42, 7, 13};
+    std::cout << "First element: " << getFirstElement(vec) << std::endl;
     alignas(32) float data[8] = {1, 2, 3, 4, 5, 6, 7, 8};
     limiter(data, 8);
     return 0;
